@@ -17,52 +17,9 @@
         </div>
         <div>
             <label for="type">Type</label>
-            <input list="typeset" id="type" name="type" value="ANY">
+            <input list="typeset" id="type" name="type">
             <datalist id="typeset">
                 <option value="ANY"></option>
-                <option value="A"></option>
-                <option value="AAAA"></option>
-                <option value="AFSDB"></option>
-                <option value="APL"></option>
-                <option value="CAA"></option>
-                <option value="CDNSKEY"></option>
-                <option value="CDS"></option>
-                <option value="CERT"></option>
-                <option value="CNAME"></option>
-                <option value="DHCID"></option>
-                <option value="DLV"></option>
-                <option value="DNAME"></option>
-                <option value="DNSKEY"></option>
-                <option value="DS"></option>
-                <option value="HIP"></option>
-                <option value="HTTPS"></option>
-                <option value="IPSECKEY"></option>
-                <option value="KEY"></option>
-                <option value="KEY"></option>
-                <option value="KX"></option>
-                <option value="LOC"></option>
-                <option value="MX"></option>
-                <option value="NAPTR"></option>
-                <option value="NS"></option>
-                <option value="NSEC"></option>
-                <option value="NSEC3"></option>
-                <option value="NSEC3PARAM"></option>
-                <option value="PTR"></option>
-                <option value="RRSIG"></option>
-                <option value="RP"></option>
-                <option value="SIG"></option>
-                <option value="SOA"></option>
-                <option value="SRV"></option>
-                <option value="SSHFP"></option>
-                <option value="SVCB"></option>
-                <option value="TA"></option>
-                <option value="TKEY"></option>
-                <option value="TLSA"></option>
-                <option value="TSIG"></option>
-                <option value="TXT"></option>
-                <option value="AXFR"></option>
-                <option value="IXFR"></option>
-                <option value="OPT"></option>
             </datalist>
         </div>
         <input type="submit" value="Query" onclick="q()">
@@ -126,6 +83,13 @@
             251: 'IXFR',
             41: 'OPT',
         };
+        const typeset = document.getElementById('typeset');
+        Object.keys(typeCnv).forEach((i) => {
+            let opt = document.createElement('option');
+            opt.value = typeCnv[i];
+            typeset.appendChild(opt);
+        })
+
         const reshold = document.getElementById('result');
         function q() {
             const param = new URLSearchParams({
