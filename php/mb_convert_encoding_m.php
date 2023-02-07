@@ -16,7 +16,7 @@
             <textarea name="string" id="inputstr"><?= isset($_POST['string']) ? htmlspecialchars($_POST['string']) : '' ?></textarea>
         </div>
         <div>
-            <label for="frenc"></label>
+            <label for="frenc">From</label>
             <select name="frenc" id="frenc">
                 <?php foreach (mb_list_encodings() as $i) : ?>
                     <option value="<?= $i ?>" <?php if (isset($_POST['frenc']) && $_POST['frenc'] === $i) : ?>selected<?php endif; ?>><?= $i ?></option>
