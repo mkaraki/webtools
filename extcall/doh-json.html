@@ -23,6 +23,13 @@
                 <option value="ANY"></option>
             </datalist>
         </div>
+        <div>
+            <label for="resolver">Resolver</label>
+            <select name="resolver" id="resolver">
+                <option value="https://cloudflare-dns.com/dns-query?">Cloudflare DNS</option>
+                <option value="https://dns.google/resolve?">Google Public DNS</option>
+            </select>
+        </div>
         <input type="submit" value="Query" onclick="q()">
     </form>
 
@@ -110,7 +117,11 @@
                 type: document.getElementsByName('type')[0].value,
             });
 
-            fetch('https://dns.google/resolve?' + param.toString())
+            fetch(document.getElementById('resolver').value + param.toString(), {
+                'headers': {
+                    'accept': 'application/dns-json',
+                }
+            })
                 .then((d) => d.json())
                 .then((i) => {
                     const ans = i['Answer'];
