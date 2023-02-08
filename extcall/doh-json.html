@@ -11,9 +11,10 @@
 
 <body>
     <form action="" onsubmit="return false">
+        <h1>nslookup</h1>
         <div>
             <label for="name">FQDN</label>
-            <input type="text" name="name" id="name">
+            <input type="text" name="name" id="name" size="64">
         </div>
         <div>
             <label for="type">Type</label>
@@ -24,6 +25,18 @@
         </div>
         <input type="submit" value="Query" onclick="q()">
     </form>
+
+    <form action="" onsubmit="return false">
+        <h2>IP Address -> in-addr.arpa converter</h2>
+        <div>
+            <label for="ipaddr">IP Address</label>
+            <input type="text" id="ipaddr" placeholder="100.64.0.1" size="40">
+        </div>
+        <div>
+            <input type="submit" value="Convert" onclick="c()">
+        </div>
+    </form>
+
     <br />
     <div>
         <table>
@@ -121,6 +134,33 @@
                         reshold.appendChild(tr);
                     });
                 });
+        }
+
+        function c() {
+            const fromip = document.getElementById('ipaddr').value;
+            if (/^[0-2]?\d?\d\.[0-2]?\d?\d\.[0-2]?\d?\d\.[0-2]?\d?\d$/.test(fromip)) {
+                // v4 convert
+                const splitted = fromip.split('.');
+                const ret = `${parseInt(splitted[3])}.${parseInt(splitted[2])}.${parseInt(splitted[1])}.${parseInt(splitted[0])}`
+                    + '.in-addr.arpa.';
+                document.getElementsByName('name')[0].value = ret;
+                document.getElementsByName('type')[0].value = 'PTR';
+            } else if (/^([0-9a-f]{0,4}:)([0-9a-f]{1,4}:?|::){0,6}(:[0-9a-f]{0,4})$/i.test(fromip)) {
+                const shorten = fromip.split('::');
+                const beg = shorten[0].split(':');
+                const end = shorten[1].split(':');
+                const lsec = 8 - beg.length - end.length;
+                let secs = '';
+                console.log(Array.apply('0', { length: lsec }));
+                [beg, Array(lsec).fill('0'), end].forEach(i => i.forEach(v => {
+                    secs += ('0'.repeat(4 - v.length) + v);
+                }))
+                const result = secs.split('').reverse().join('.') + '.ip6.arpa.';
+                document.getElementsByName('name')[0].value = result;
+                document.getElementsByName('type')[0].value = 'PTR';
+            } else {
+                alert('Unsupported format.')
+            }
         }
     </script>
 </body>
