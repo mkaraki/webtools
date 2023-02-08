@@ -147,11 +147,14 @@
                 document.getElementsByName('type')[0].value = 'PTR';
             } else if (/^([0-9a-f]{0,4}:)([0-9a-f]{1,4}:?|::){0,6}(:[0-9a-f]{0,4})$/i.test(fromip)) {
                 const shorten = fromip.split('::');
+                if (shorten.length > 2) {
+                    alert('Unsupported format');
+                    return;
+                }
                 const beg = shorten[0].split(':');
-                const end = shorten[1].split(':');
+                const end = fromip.length == 2 ? shorten[1].split(':') : [];
                 const lsec = 8 - beg.length - end.length;
                 let secs = '';
-                console.log(Array.apply('0', { length: lsec }));
                 [beg, Array(lsec).fill('0'), end].forEach(i => i.forEach(v => {
                     secs += ('0'.repeat(4 - v.length) + v);
                 }))
