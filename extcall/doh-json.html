@@ -163,7 +163,7 @@
                     return;
                 }
                 const beg = shorten[0].split(':');
-                const end = fromip.length == 2 ? shorten[1].split(':') : [];
+                const end = shorten.length == 2 ? shorten[1].split(':') : [];
                 const lsec = 8 - beg.length - end.length;
                 let secs = '';
                 [beg, Array(lsec).fill('0'), end].forEach(i => i.forEach(v => {
