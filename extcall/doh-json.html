@@ -58,6 +58,7 @@
             <tbody id="result"></tbody>
         </table>
     </div>
+    <script src="../scripts/iputil.js"></script>
     <script>
         const typeCnv = {
             1: 'A',
@@ -149,31 +150,13 @@
 
         function c() {
             const fromip = document.getElementById('ipaddr').value;
-            if (/^[0-2]?\d?\d\.[0-2]?\d?\d\.[0-2]?\d?\d\.[0-2]?\d?\d$/.test(fromip)) {
-                // v4 convert
-                const splitted = fromip.split('.');
-                const ret = `${parseInt(splitted[3])}.${parseInt(splitted[2])}.${parseInt(splitted[1])}.${parseInt(splitted[0])}`
-                    + '.in-addr.arpa.';
-                document.getElementsByName('name')[0].value = ret;
-                document.getElementsByName('type')[0].value = 'PTR';
-            } else if (/^([0-9a-f]{0,4}:)([0-9a-f]{1,4}:?|::){0,6}(:[0-9a-f]{0,4})$/i.test(fromip)) {
-                const shorten = fromip.split('::');
-                if (shorten.length > 2) {
-                    alert('Unsupported format');
-                    return;
-                }
-                const beg = shorten[0].split(':');
-                const end = shorten.length == 2 ? shorten[1].split(':') : [];
-                const lsec = 8 - beg.length - end.length;
-                let secs = '';
-                [beg, Array(lsec).fill('0'), end].forEach(i => i.forEach(v => {
-                    secs += ('0'.repeat(4 - v.length) + v);
-                }))
-                const result = secs.split('').reverse().join('.') + '.ip6.arpa.';
-                document.getElementsByName('name')[0].value = result;
-                document.getElementsByName('type')[0].value = 'PTR';
-            } else {
+            const res = getPtrAcceptable(fromip);
+            if (res === undefined) {
                 alert('Unsupported format.')
+            }
+            else {
+                document.getElementsByName('name')[0].value = res;
+                document.getElementsByName('type')[0].value = 'PTR';
             }
         }
     </script>
