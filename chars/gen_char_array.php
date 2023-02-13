@@ -1,16 +1,17 @@
 <?php
+require_once __DIR__ . '/_libchars.php';
 $ary = [];
 
 if (isset($_GET['scope'])) {
     switch ($_GET['scope']) {
         case 'a':
-            $ary = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+            $ary = CHARS_SMALL_ALPHABET;
             break;
         case 'A':
-            $ary = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+            $ary = CHARS_LARGE_ALPHABET;
             break;
         case 'n':
-            $ary = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            $ary = CHARS_NUMBER;
             break;
     }
 } else {

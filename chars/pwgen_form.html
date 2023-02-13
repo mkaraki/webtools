@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
+    <style>
+        code {
+            overflow-wrap: break-word;
+        }
+
+        code>span {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Password Generator</h1>
+    <form action="pwgen.php" method="post" onclick="return false" id="f">
+        <div>
+            <label for="s">Order (s)</label>
+            <input type="text" name="s" id="s" value="aAn12">
+        </div>
+        <div>
+            Formats:
+            <ul>
+                <li>a: Small alphabet</li>
+                <li>A: Large alphabet</li>
+                <li>n: Number</li>
+                <li>s: Special Character</li>
+            </ul>
+        </div>
+        <div>
+            <label for="c">Speial Characters (c)</label>
+            <input type="text" name="c" id="c" value="" placeholder="!@#$%...">
+        </div>
+        <br />
+        <div>
+            Or access: <code>pwgen.php?s=<span>Order</span>&c=<span>Specials</span></code>
+        </div>
+        <br />
+        <div>
+            <button type="submit" onclick="g()">Generate</button>
+        </div>
+    </form>
+    <br />
+    <div>
+        <code id="gen"></code>
+    </div>
+    <script>
+        function g() {
+            fetch('pwgen.php', {
+                method: 'POST',
+                body: new FormData(document.getElementById('f'))
+            })
+                .then((data) => data.text())
+                .then((pw) => document.getElementById('gen').innerText = pw);
+        }
+    </script>
+</body>
+
+</html>
