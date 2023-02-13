@@ -9,8 +9,7 @@ const isIPv6Address = function (addr) {
 const convertToIPv6AddressWithoutEmptyAndSeparator = function (fromip) {
     const shorten = fromip.split('::');
     if (shorten.length > 2) {
-        alert('Unsupported format');
-        return;
+        return undefined;
     }
     const beg = shorten[0].split(':');
     const end = shorten.length == 2 ? shorten[1].split(':') : [];
@@ -31,6 +30,8 @@ const getPtrAcceptable = function (fromip) {
         return ret;
     } else if (isIPv6Address(fromip)) {
         const secs = convertToIPv6AddressWithoutEmptyAndSeparator(fromip);
+        if (secs === undefined)
+            return undefined;
         const result = secs.split('').reverse().join('.') + '.ip6.arpa.';
         return result;
     } else {
