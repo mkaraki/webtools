@@ -73,10 +73,10 @@ $v6mode = isset($_GET['v6s']);
             padding: 0px 3px;
         }
         .all-zero {
-            background-color: #383;
+            background-color: #AEA;
         }
         .all-one {
-            background-color: #833;
+            background-color: #EAA;
         }
     </style>
     <script>
