@@ -10,10 +10,6 @@
         code {
             overflow-wrap: break-word;
         }
-
-        code>span {
-            color: red;
-        }
     </style>
 </head>
 
@@ -39,10 +35,6 @@
         </div>
         <br />
         <div>
-            Or access: <code>pwgen.php?s=<span>Order</span>&c=<span>Specials</span></code>
-        </div>
-        <br />
-        <div>
             <button type="submit" onclick="g()">Generate</button>
         </div>
     </form>
@@ -50,16 +42,8 @@
     <div>
         <code id="gen"></code>
     </div>
-    <script>
-        function g() {
-            fetch('pwgen.php', {
-                method: 'POST',
-                body: new FormData(document.getElementById('f'))
-            })
-                .then((data) => data.text())
-                .then((pw) => document.getElementById('gen').innerText = pw);
-        }
-    </script>
+
+    <script src="pwgen.js"></script>
 </body>
 
 </html>
