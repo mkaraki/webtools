@@ -1,11 +1,32 @@
 const isIPv4Address = (addr: string): boolean => {
-    // TODO: More strict validation
-    return /^([0-2]?\d?\d\.){3}[0-2]?\d?\d$/.test(addr);
+    if (!/^([0-2]?\d?\d\.){3}[0-2]?\d?\d$/.test(addr))
+        return false;
+
+    const splitted = addr.split('.');
+    for (let i = 0; i < 4; i++) {
+        const octet = parseInt(splitted[i]);
+        if (octet < 0 || octet > 255) return false;
+    }
+
+    return true;
+}
+
+const isIPv6AddressRegexMatch = (addr: string): boolean => {
+    return /^([0-9a-f]{0,4}:)([0-9a-f]{1,4}:?|::){0,6}(:[0-9a-f]{0,4})$/i.test(addr);
 }
 
 const isIPv6Address = (addr: string): boolean => {
-    // TODO: More strict validation
-    return /^([0-9a-f]{0,4}:)([0-9a-f]{1,4}:?|::){0,6}(:[0-9a-f]{0,4})$/i.test(addr);
+    if (!/^([0-9a-f]{0,4}:)([0-9a-f]{1,4}:?|::){0,6}(:[0-9a-f]{0,4})$/i.test(addr))
+        return false;
+
+    const cvt_res = convertToIPv6AddressWithoutEmpty(addr);
+    if (cvt_res === null)
+        return false;
+
+    if (!isIPv6AddressWithoutEmpty(cvt_res))
+        return false;
+
+    return true;
 }
 
 const isIPv6AddressWithoutEmpty = (addr: string): boolean => {
@@ -13,9 +34,25 @@ const isIPv6AddressWithoutEmpty = (addr: string): boolean => {
 }
 
 const convertToIPv6AddressWithoutEmptyAndSeparator = (fromIp: string): string | null => {
+    if (!isIPv6AddressRegexMatch(fromIp))
+        return null;
+
     const shorten = fromIp.split('::');
     if (shorten.length > 2) {
         return null;
+    }
+    if (shorten.length == 1) {
+        // No shorten (`::` not found)
+        const octets = shorten[0].split(':');
+        if (octets.length != 8) {
+            return null;
+        }
+        let result = '';
+        octets.forEach(octet => {
+            if (!/^[0-9a-fA-F]{1,4}$/i.test(octet)) return null;
+            result += (octet.padStart(4, '0'));
+        });
+        return result;
     }
     const beg = shorten[0].split(':');
     const end = shorten.length == 2 ? shorten[1].split(':') : [];
@@ -28,7 +65,7 @@ const convertToIPv6AddressWithoutEmptyAndSeparator = (fromIp: string): string | 
 }
 
 const convertToIPv6AddressWithoutEmpty = (fromIp: string): string | null => {
-    if (!isIPv6Address(fromIp))
+    if (!isIPv6AddressRegexMatch(fromIp))
         return null;
     const nonSeparator = convertToIPv6AddressWithoutEmptyAndSeparator(fromIp);
     if (nonSeparator === null)
@@ -61,8 +98,9 @@ const getPtrAcceptableAddress = (fromIp: string): string | null => {
     }
 }
 
-const formatIPv6OctetNumbersToStringAddress = (octets: number[] | Uint16Array): string => {
+const formatIPv6OctetNumbersToStringAddress = (octets: number[] | Uint16Array): string | null => {
     let result = '';
+    if (octets.length != 8) return null;
     for (let i = 0; i < 8; i++) {
         result += octets[i].toString(16);
         if (i != 7)
