@@ -9,10 +9,14 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.11",
     "@types/encoding-japanese": "^2.0.5",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.5",
     "@vitejs/plugin-vue": "^5.0.3",
+    "chai": "^5.0.0",
     "esbuild": "^0.19.11",
+    "mocha": "^10.2.0",
     "sass": "^1.70.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
@@ -23,6 +27,7 @@
   "dependencies": {
     "bcrypt-ts": "^5.0.1",
     "encoding-japanese": "^2.0.0",
+    "moji": "github:niwaringo/moji",
     "vue": "^3.4.15"
   }
 }

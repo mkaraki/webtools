@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kana Convert</title>
+</head>
+
+<body>
+    <header>
+        <h1>Kana Convert</h1>
+        <hr />
+    </header>
+
+    <form id="form">
+        <div>
+            <label for="inputStr">Input</label>
+            <textarea name="string" id="inputStr"></textarea>
+        </div>
+        <div>
+            <label for="mode">Mode</label>
+            <select name="mode" id="mode"></select>
+        </div>
+        <div>
+            <input type="submit" value="Process">
+        </div>
+    </form>
+
+    <div>
+        <pre><code id="outputStr"></code></pre>
+    </div>
+
+    <script type="module" src="kana_convert.ts"></script>
+</body>
+
+</html>
