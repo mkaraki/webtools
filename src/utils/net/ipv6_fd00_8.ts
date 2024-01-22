@@ -1,5 +1,4 @@
 import { generateSecureRandomUint16 } from "../ts/random";
-import { formatIPv6OctetNumbersToStringAddress } from "./ip_address";
 
 const generateIPv6FD00_48 = (): Uint16Array => {
     const randomGlobalID = generateSecureRandomUint16(3);
