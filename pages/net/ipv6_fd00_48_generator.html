@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FD00::/48 Local Unicast Address Generator</title>
+    <style>
+        code {
+            color: darkred;
+        }
+
+        .monospace {
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>FD00::/48 Local Unicast Address Generator</h1>
+        See <a href="https://datatracker.ietf.org/doc/html/rfc4193">RFC 4193</a> for more information.
+        <hr />
+    </header>
+
+    <main>
+        <div>You can use: <code><span class="gen-network"></span>::/48</code></div>
+        <p>
+            You can create 65,536 of <code>/64</code> subnet in <code><span class="gen-network"></span>::/48</code>
+            network.<br />
+            <small class="monospace">
+                Subnet From: <code><span class="gen-subnet-from"></span>::/64</code><br />
+                Subnet Last: <code><span class="gen-subnet-last"></span>::/64</code>
+            </small>
+        </p>
+        <p>
+            Each subnet can have 18,446,744,073,709,551,616 hosts.
+        </p>
+        <div>
+            <button id="btn-generate">Regenerate</button>
+        </div>
+    </main>
+
+    <script type="module" src="ipv6_fd00_48_generator.ts"></script>
+</body>
+
+</html>

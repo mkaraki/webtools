@@ -18,8 +18,24 @@ const generateSecureRandomUint8 = (length: number): Uint8Array => {
     return randU8;
 };
 
+const generateSecureRandomUint16 = (length: number): Uint16Array => {
+    let randU8 = new Uint16Array(length);
+    window.crypto.getRandomValues(randU8);
+
+    return randU8;
+}
+
+const generateSecureRandomBigUint64 = (length: number): BigUint64Array => {
+    let randU8 = new BigUint64Array(length);
+    window.crypto.getRandomValues(randU8);
+
+    return randU8;
+};
+
 export {
     generateRandomUint8,
-    generateSecureRandomUint8
+    generateSecureRandomUint8,
+    generateSecureRandomUint16,
+    generateSecureRandomBigUint64,
 };
 export type { RandomUint8Generator };
