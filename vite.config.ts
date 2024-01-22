@@ -2,6 +2,7 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import simpleHtmlPlugin from 'vite-plugin-simple-html';
 import vue from '@vitejs/plugin-vue'
+import sitemap from 'vite-plugin-sitemap'
 
 export default defineConfig({
     build: {
@@ -19,5 +20,8 @@ export default defineConfig({
             minify: true,
         }),
         vue(),
+        sitemap({
+            hostname: process.env['VITE_BASE_URL'] ?? 'http://localhost',
+        }),
     ]
 })
