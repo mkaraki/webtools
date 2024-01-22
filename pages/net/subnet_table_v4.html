@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPv4 Subnet Table</title>
+    <style>
+        .octet {
+            width: 25px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>IPv4 Subnet Table</h1>
+    </header>
+
+    <div>
+        <label for="ip">IP Address</label>
+        <input type="text" id="ip" size="13" value="100.64.0.1">
+        <Button id="btn-calculate">Calculate</Button>
+        <hr />
+        <br />
+    </div>
+
+    <table class="bordered">
+        <thead>
+            <tr>
+                <th>CIDR</th>
+                <th>Start/End</th>
+                <th>Netmask</th>
+            </tr>
+        </thead>
+        <tbody id="subnet-table"></tbody>
+    </table>
+
+    <script type="module" src="subnet_table_v4.ts"></script>
+</body>
