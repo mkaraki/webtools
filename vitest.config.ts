@@ -5,5 +5,6 @@ export default defineConfig({
         coverage: {
             reporter: ['clover'],
         },
+        environment: 'happy-dom',
     },
 })
