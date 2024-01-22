@@ -24,7 +24,7 @@
   },
   "include": [
     "src",
-    "pages/net/doh_client.ts",
-    "pages/html/sri_hash_calc.ts"
+    "pages",
+    "test",
   ]
 }

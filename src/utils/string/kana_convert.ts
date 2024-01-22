@@ -39,6 +39,10 @@ const KanaConvertOptions = [
 const batchProcessKanaConvert = (input: string, commands: string[]): string => {
     let mojiObject = moji(input);
     commands.forEach((command) => {
+        if (!KanaConvertOptions.map((option) => option.command).includes(command)) {
+            throw new TypeError(`Invalid command`);
+        }
+
         mojiObject = mojiObject.convert(command);
     });
     return mojiObject.toString();
