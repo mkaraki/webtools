@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mojibake resolver</title>
+</head>
+
+<body id="body">
+    <header>
+        <h1>mb_convert_encoding (Mojibake resolver)</h1>
+        <p>Currently only support originally UTF-8 text.</p>
+    </header>
+    <form id="form">
+        <div>
+            <label for="inputStr">Input</label>
+            <textarea id="inputStr"></textarea>
+        </div>
+        <div>
+            <label for="fromEnc">From</label>
+            <select id="fromEnc">
+            </select>
+        </div>
+        <div>
+            <input type="submit" value="Process">
+        </div>
+    </form>
+    <div>
+        <pre><code id="outputStr"></code></pre>
+    </div>
+
+    <script type="module" src="mojibake_resolver.ts"></script>
+</body>
+
+</html>
