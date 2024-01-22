@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 /coverage
+/cypress-coverage
+/.nyc_output
+/vitest-coverage

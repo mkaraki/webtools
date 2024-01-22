@@ -8,18 +8,29 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "vite-test-preview": "vite preview --port 14231",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "e2e-test": "start-server-and-test vite-test-preview http://localhost:14231 cypress:run",
+    "open-cypress": "start-server-and-test vite-test-preview http://localhost:14231 cypress:open"
   },
   "devDependencies": {
+    "@babel/plugin-syntax-jsx": "^7.23.3",
+    "@cypress/code-coverage": "^3.12.18",
     "@types/chai": "^4.3.11",
     "@types/encoding-japanese": "^2.0.5",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.5",
     "@vitejs/plugin-vue": "^5.0.3",
     "@vitest/coverage-v8": "^1.2.1",
+    "cypress": "^13.6.3",
+    "cypress-vite": "^1.5.0",
     "esbuild": "^0.19.11",
     "happy-dom": "^13.2.1",
+    "nyc": "^15.1.0",
     "sass": "^1.70.0",
+    "start-server-and-test": "^2.0.3",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
     "vite-plugin-simple-html": "^0.1.2",
@@ -32,5 +43,13 @@
     "encoding-japanese": "^2.0.0",
     "moji": "github:niwaringo/moji",
     "vue": "^3.4.15"
+  },
+  "nyc": {
+    "all": true,
+    "include": "*.ts",
+    "report-dir": "cypress-coverage",
+    "reporter": [
+      "clover"
+    ]
   }
 }
