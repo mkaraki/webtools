@@ -1,0 +1,10 @@
+table.bordered {
+    border-collapse: collapse;
+    border: solid 1px black;
+
+    th,
+    td {
+        border: solid 1px black;
+        padding: 3px;
+    }
+}

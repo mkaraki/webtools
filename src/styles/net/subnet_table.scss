@@ -1,0 +1,26 @@
+section.hide>div,
+section.hide>nav {
+    display: none;
+}
+
+.ip-part {
+    padding: 0px 3px;
+}
+
+.all-zero {
+    background-color: #AEA;
+}
+
+.all-one {
+    background-color: #EAA;
+}
+
+.ip-connected {
+    background-color: #CCC;
+}
+
+.octet {
+    display: inline-block;
+    font-family: monospace;
+    text-align: right;
+}
