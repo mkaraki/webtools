@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMPv3 Config Generator</title>
+    <style>
+        span {
+            color: red;
+            font-family: monospace;
+        }
+        main>section {
+            margin-bottom: 10px;
+        }
+        .user {
+            text-decoration: underline;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>SNMPv3 Config Generator</h1>
+        <hr />
+    </header>
+
+    <main>
+        <section>
+            <h2>Summary</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Engine ID</td>
+                        <td><span class="gen-engine-id">loading</span></td>
+                    </tr>
+                    <tr>
+                        <td>Auth Password</td>
+                        <td><span class="gen-auth-pass">loading</span></td>
+                    </tr>
+                    <tr>
+                        <td>Priv Password</td>
+                        <td><span class="gen-priv-pass">loading</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Cisco</h2>
+            <div>
+                snmp-server engineID local <span class="gen-engine-id">loading</span><br />
+                snmp-server group <span class="user">group-name</span> v3 priv<br />
+                snmp-server user <span class="user">user-name</span> <span class="user">group-name</span>
+                    v3 encrypted auth sha <span class="gen-auth-pass">loading</span> priv aes 256 <span class="gen-priv-pass">loading</span>
+            </div>
+        </section>
+        <div>
+            <button id="btn-generate">Generate</button>
+        </div>
+    </main>
+
+    <script type="module" src="snmpv3_config_gen.ts"></script>
+</body>
+
+</html>
