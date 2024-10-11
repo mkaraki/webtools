@@ -21,6 +21,7 @@ export default defineConfig({
                 resolve(__dirname, 'pages/string/kana_convert.html'),
                 resolve(__dirname, 'pages/string/ascii_table.html'),
                 resolve(__dirname, 'pages/string/string_counter.html'),
+                resolve(__dirname, 'pages/string/notepad.html'),
             ]
         },
     },

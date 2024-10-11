@@ -1,0 +1,116 @@
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    background-color: #EEE;
+    height: calc(100% - 65px);
+}
+
+main.status {
+    height: calc(100% - 80px);
+}
+
+main, #textarea {
+    width: 100%;
+}
+
+#textarea, .font-sample, div.printer-content {
+    font-family: 'Consolas', monospace;
+    font-size: 11pt;
+}
+
+#textarea {
+    height: calc(100% - 10px);
+    width: calc(100% - 10px);
+    border: none;
+    text-wrap: nowrap;
+    margin: 5px;
+    background: transparent;
+}
+
+#textarea:focus {
+    outline: none;
+    border: none;
+}
+
+#textarea.wordwrap {
+    text-wrap: wrap;
+}
+
+#textarea::selection {
+    background-color: darkblue;
+    color: white;
+}
+
+div.printer-content {
+    display: none;
+}
+
+footer {
+    height: 15px;
+    padding: 0 15px;
+}
+
+footer>.divider {
+    display: inline-block;
+    width: 15px;
+    text-align: center;
+    color: gray;
+}
+
+footer>.divider:after {
+    content: '|';
+    color: gray;
+}
+
+span.check {
+    display: inline-block;
+    color: #0A0;
+    width: 20px;
+    margin-right: 10px;
+}
+
+span.check-enabled:after {
+    content: '✔';
+}
+
+nav a.dropdown-item kbd {
+    display: inline-block;
+    margin-left: 15px;
+    font-size: 10pt;
+    font-family: 'Consolas', monospace;
+    color: darkgray;
+    background: none;
+}
+
+@media print {
+    footer, nav, nav * {
+        display: none;
+    }
+
+    * {
+        background: none;
+        color: black;
+    }
+
+    html, body {
+        width: unset;
+        height: unset;
+    }
+
+    main {
+        display: contents;
+    }
+
+    textarea {
+        display: none;
+    }
+
+    div.printer-content {
+        display: block;
+    }
+}

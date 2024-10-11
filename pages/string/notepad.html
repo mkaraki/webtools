@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notepad</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+        <span class="navbar-brand">📝</span>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="javascript:void(0)" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        File
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" target="_blank">New tab</a></li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="window.open(location.href, '_blank', 'popup')">
+                                New window
+                            </a>
+                        </li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-open">Open <kbd>Ctrl + O</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-save">Save <kbd>Ctrl + S</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-saveas">Save as <kbd>Ctrl + Shift + S</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- <li><a class="dropdown-item" href="javascript:void(0)">Page setup</a></li> -->
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-print">Print <kbd>Ctrl + P</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="window.close();">Exit</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="javascript:void(0)" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        Edit
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-undo">Undo <kbd>Ctrl + U</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-redo">Redo <kbd>Ctrl + Y</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-cut">Cut <kbd>Ctrl + X</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-copy">Copy <kbd>Ctrl + C</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-paste">Paste <kbd>Ctrl + V</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-delete">Delete <kbd>Delete</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-search">Define with Bing <kbd>Ctrl + E</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-find">Find <kbd>Ctrl + F</kbd></a></li>
+                        <li><a class="dropdown-item btns-find-next" href="javascript:void(0)">Find next <kbd>F3</kbd></a></li>
+                        <li><a class="dropdown-item btns-find-prev" href="javascript:void(0)">Find previous <kbd>Shift + F3</kbd></a></li>
+                        <!-- <li><a class="dropdown-item" href="javascript:void(0)" id="btn-replace">Replace <kbd>Ctrl + H</kbd></a></li> -->
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-goto">Go to line <kbd>Ctrl + G</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-sel-all">Select all <kbd>Ctrl + A</kbd></a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-datetime">Insert Date/Time <kbd>F5</kbd></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-font">Font</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="m-2 p-1">NOTE: Some keyboard shortcuts are unavailable for this web browser.</span></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="javascript:void(0)" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        View
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-status">
+                            <span id="state-status" class="check check-enabled"></span>
+                            Status bar
+                        </a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-wrap">
+                            <span id="state-wrap" class="check"></span>
+                            Word wrap
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="textarea-container" class="status">
+    <textarea id="textarea"></textarea>
+    <div id="printer-view" class="printer-content"></div>
+</main>
+<footer id="status-bar">
+    Ln <span id="cursor-line">0</span>, Col <span id="cursor-col">0</span>
+    <span class="divider"></span>
+    <span id="selected-counter"><span id="counter-selection">0</span> of </span>
+    <span id="counter">0</span> characters, <span id="counter-word">0</span> words, <span id="counter-line">0</span> lines
+    <span class="divider"></span>
+    Unix (LF)
+    <span class="divider"></span>
+    UTF-8
+</footer>
+
+<div class="modal fade" id="findModal" tabindex="-1" aria-labelledby="findModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="findModalLabel">Find and Replace</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="return false;">
+                    <div class="mb-3">
+                        <label for="find-text" class="col-form-label">Find:</label>
+                        <input type="text" class="form-control" id="find-text" placeholder="Find">
+                    </div>
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-secondary btns-find-next">Find next</button>
+                        <button type="button" class="btn btn-secondary btns-find-prev">Find Previous</button>
+                    </div>
+                    <!--<div class="mb-3">
+                        <label for="replace-text" class="col-form-label">Replace with:</label>
+                        <input type="text" class="form-control" id="replace-text" placeholder="replace" />
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-secondary btns-find-next">Find next</button>
+                        <button type="button" class="btn btn-secondary btns-find-prev">Find Previous</button>
+                    </div>-->
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fontModal" tabindex="-1" aria-labelledby="fontModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="fontModalLabel">Font</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="return false;">
+                    <div class="mb-3">
+                        <label for="find-text" class="font-family">Font family:</label>
+                        <select class="form-control" id="font-family">
+                            <optgroup label="Generic font names">
+                                <option value="serif">Serif</option>
+                                <option value="sans-serif">Sans-serif</option>
+                                <option value="monospace" selected>Monospace</option>
+                                <option value="cursive">Cursive</option>
+                                <option value="fantasy">Fantasy</option>
+                                <option value="system-ui">System UI</option>
+                                <option value="ui-serif">UI Serif</option>
+                                <option value="ui-sans-serif">UI Sans Serif</option>
+                                <option value="ui-monospace">UI Monospace</option>
+                                <option value="ui-rounded">UI Rounded</option>
+                                <option value="emoji">Emoji</option>
+                                <option value="math">Math</option>
+                                <option value="fangsong">Fangsong</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="font-size" class="font-size">Font size:</label>
+                        <input type="text" class="form-control" id="font-size" value="11">
+                    </div>
+                    <div class="mb-3" id="font-sample">
+                        ABC abc 0123 .,!
+                    </div>
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary" id="btn-font-apply">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="notepad.ts"></script>
+</body>
+</html>
