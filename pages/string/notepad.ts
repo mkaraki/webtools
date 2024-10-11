@@ -40,7 +40,6 @@ const save = async () => {
 }
 
 const saveAs = async () => {
-    const contents = textArea.value;
     await (async () => {
         try {
             const fileHandle: FileSystemFileHandle = await self.showSaveFilePicker({
