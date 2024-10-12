@@ -1,8 +1,9 @@
 import 'bootstrap/scss/bootstrap.scss';
-import { Modal} from 'bootstrap/js/index.esm';
+import * as bootstrap from 'bootstrap';
 import '../../src/styles/string/notepad.scss';
 import {generateSecureRandomUint32} from "../../src/utils/ts/random.ts";
 import {countString} from '../../src/utils/string/string_counter.ts';
+import {HTMLAnchorElement} from "happy-dom";
 
 const textArea = document.getElementById('textarea') as HTMLTextAreaElement;
 const printerView = document.getElementById('printer-view') as HTMLDivElement;
@@ -13,86 +14,101 @@ let lastFileOperationHandle: FileSystemFileHandle | null = null;
 
 let findIndex = 0;
 
-const findModal = new Modal('#findModal', {
+const findModal = new bootstrap.Modal('#findModal', {
     keyboard: true,
     backdrop: 'static',
 })
 
-const fontModal = new Modal('#fontModal', {
+const fontModal = new bootstrap.Modal('#fontModal', {
     keyboard: true,
 })
 
-const writeFile = async (fileHandle) => {
+const writeFile = async (fileHandle: FileSystemFileHandle) => {
     const writable = await fileHandle.createWritable();
     const contents = textArea.value;
-    const binary = new TextEncoder('utf-8').encode(contents).buffer;
+    // TODO: Add non UTF-8 encoding support.
+    const binary = new TextEncoder().encode(contents).buffer;
     await writable.write(binary);
     await writable.close();
 };
 
-const save = async () => {
+const save = () => {
     if (lastFileOperationHandle === null) {
-        await saveAs();
+        saveAs();
         return;
     }
 
-    await writeFile(lastFileOperationHandle);
+    writeFile(lastFileOperationHandle).then(() => {
+        // TODO: Add loading indicator.
+    });
 }
 
-const saveAs = async () => {
-    await (async () => {
-        try {
-            const fileHandle: FileSystemFileHandle = await self.showSaveFilePicker({
-                suggestedName: 'Untitled.txt',
-                id: openerId,
-                startIn: 'documents',
-                types: [
-                    {
-                        description: 'Text files',
-                        accept: {
-                            'text/plain': ['.txt'],
-                        },
+const saveAs = () => {
+    try {
+        (window as any).showSaveFilePicker({
+            suggestedName: 'Untitled.txt',
+            id: openerId,
+            startIn: 'documents',
+            types: [
+                {
+                    description: 'Text files',
+                    accept: {
+                        'text/plain': ['.txt'],
                     },
-                ],
+                },
+            ],
+        }).then((fileHandle: FileSystemFileHandle) => {
+            writeFile(fileHandle).then(() => {
+                // TODO: Add loading indicator.
+                lastFileOperationHandle = fileHandle;
             });
-            await writeFile(fileHandle);
-            lastFileOperationHandle = fileHandle;
-        } catch (error) {
-            console.log(error);
-        }
-    })();
+        }).catch((error: any) => {
+            console.error(error);
+            alert('error!');
+        });
+    } catch (error) {
+        console.log(error);
+    }
 };
 
-const open = async () => {
-    await (async () => {
-        try {
-            const fileHandle: Array<FileSystemFileHandle> = await self.showOpenFilePicker({
-                id: openerId,
-                startIn: 'documents',
-                types: [
-                    {
-                        description: 'Text files',
-                        accept: {
-                            'text/plain': ['.txt'],
-                        },
-                    },
-                ],
-            });
+const openFileAndReadContent = async (fileHandle: FileSystemFileHandle): Promise<string> => {
+    const file = await fileHandle.getFile();
+    const binary = await file.arrayBuffer();
+    return new TextDecoder('utf-8').decode(binary);
+}
 
+const open = () => {
+    try {
+        (window as any).showOpenFilePicker({
+            id: openerId,
+            startIn: 'documents',
+            types: [
+                {
+                    description: 'Text files',
+                    accept: {
+                        'text/plain': ['.txt'],
+                    },
+                },
+            ],
+        }).then((fileHandle: FileSystemFileHandle[]) => {
             if (fileHandle.length === 0) {
                 alert('No file selected.')
                 return;
             }
 
-            const file = await fileHandle[0].getFile();
-            const binary = await file.arrayBuffer();
-            textArea.value = new TextDecoder('utf-8').decode(binary);
-            changeContent();
-            lastFileOperationHandle = fileHandle[0];
-        } catch (error) {
-            console.log(error);
-        }
-    })();
+            openFileAndReadContent(fileHandle[0]).then((content) => {
+                // TODO: Add loading indicator.
+                textArea.value = content;
+                changeContent();
+                lastFileOperationHandle = fileHandle[0];
+            });
+        }).catch((error: any) => {
+            console.error(error);
+            alert('error!');
+        });
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 const isSelected = () => {
@@ -126,10 +142,10 @@ const selectionChange = () => {
     }
 
     if (isSelected()) {
-        document.getElementById('selected-counter').classList.toggle('d-none', false);
-        document.getElementById('counter-selection').innerText = getSelectionText().length.toString();
+        (document.getElementById('selected-counter') as HTMLSpanElement).classList.toggle('d-none', false);
+        (document.getElementById('counter-selection') as HTMLSpanElement).innerText = (getSelectionText() as string).length.toString();
     } else {
-        document.getElementById('selected-counter').classList.toggle('d-none', true);
+        (document.getElementById('selected-counter') as HTMLSpanElement).classList.toggle('d-none', true);
     }
 };
 
@@ -167,34 +183,35 @@ const redo = () => {
     changeContent();
 }
 
-const copy = async () => {
+const copy = () => {
     if (!isSelected()) {
         return;
     }
-    const text = getSelectionText();
-    await navigator.clipboard.writeText(text);
+    const text = getSelectionText() as string;
+    navigator.clipboard.writeText(text);
 }
 
-const cut = async () => {
+const cut = () => {
     if (!isSelected()) {
         return;
     }
-    const text = getSelectionText();
-    await navigator.clipboard.writeText(text);
+    const text = getSelectionText() as string;
+    navigator.clipboard.writeText(text);
     textArea.focus();
     // TODO: Rewrite this to not use execCommand.
     document.execCommand("delete");
 }
 
-const paste = async () => {
-    const text = await navigator.clipboard.readText();
-    if (isSelected()) {
+const paste = () => {
+    navigator.clipboard.readText().then((text) => {
+        if (isSelected()) {
+            textArea.focus();
+            // TODO: Rewrite this to not use execCommand.
+            document.execCommand("delete");
+        }
         textArea.focus();
-        // TODO: Rewrite this to not use execCommand.
-        document.execCommand("delete");
-    }
-    textArea.focus();
-    document.execCommand("insertText", false, text);
+        document.execCommand("insertText", false, text);
+    });
 }
 
 const deleteStr = () => {
@@ -211,7 +228,7 @@ const search = () => {
     if (!isSelected()) {
         return;
     }
-    const searchStr = encodeURI(getSelectionText());
+    const searchStr = encodeURI(getSelectionText() as string);
     window.open('https://www.bing.com/search?q=' + searchStr, '_blank');
 }
 
@@ -262,7 +279,11 @@ const findPrev = () => {
 }
 
 const gotoLine = () => {
-    let line = parseInt(prompt('Enter line number:'));
+    const userInput = prompt('Enter line number:');
+    if (userInput === null) {
+        return;
+    }
+    let line = parseInt(userInput as string);
     if (isNaN(line)) {
         return;
     }
@@ -283,57 +304,57 @@ const gotoLine = () => {
     textArea.setSelectionRange(location, location);
 }
 
-document.getElementById('btn-save').onclick = await save;
-document.getElementById('btn-saveas').onclick = await saveAs;
-document.getElementById('btn-open').onclick = await open;
-document.getElementById('btn-status').onclick = () => {
-    document.getElementById('textarea-container').classList.toggle('status');
-    document.getElementById('status-bar').classList.toggle('d-none');
-    document.getElementById('state-status').classList.toggle('check-enabled');
+(<any>document.getElementById('btn-save') as HTMLAnchorElement).onclick = save;
+(<any>document.getElementById('btn-saveas') as HTMLAnchorElement).onclick = saveAs;
+(<any>document.getElementById('btn-open') as HTMLAnchorElement).onclick = open;
+(<any>document.getElementById('btn-status') as HTMLAnchorElement).onclick = () => {
+    (<any>document.getElementById('textarea-container') as HTMLElement).classList.toggle('status');
+    (<any>document.getElementById('status-bar') as HTMLElement).classList.toggle('d-none');
+    (<any>document.getElementById('state-status') as HTMLSpanElement).classList.toggle('check-enabled');
 }
-document.getElementById('btn-wrap').onclick = () => {
+(<any>document.getElementById('btn-wrap') as HTMLAnchorElement).onclick = () => {
     textArea.classList.toggle('wordwrap');
-    document.getElementById('state-status').classList.toggle('check-enabled');
+    (<HTMLSpanElement><any>document.getElementById('state-status')).classList.toggle('check-enabled');
 }
-document.getElementById('btn-print').onclick = () => {
+(<HTMLAnchorElement><any>document.getElementById('btn-print')).onclick = () => {
     window.print();
 }
-document.getElementById('btn-datetime').onclick = insertDateTime;
-document.getElementById('btn-undo').onclick = undo;
-document.getElementById('btn-redo').onclick = redo;
-document.getElementById('btn-copy').onclick = await copy;
-document.getElementById('btn-cut').onclick = await cut;
-document.getElementById('btn-paste').onclick = await paste;
-document.getElementById('btn-delete').onclick = await deleteStr;
-document.getElementById('btn-sel-all').onclick = () => {
+(<any>document.getElementById('btn-datetime') as HTMLAnchorElement).onclick = insertDateTime;
+(<any>document.getElementById('btn-undo') as HTMLAnchorElement).onclick = undo;
+(<any>document.getElementById('btn-redo') as HTMLAnchorElement).onclick = redo;
+(<any>document.getElementById('btn-copy') as HTMLAnchorElement).onclick = copy;
+(<any>document.getElementById('btn-cut') as HTMLAnchorElement).onclick = cut;
+(<any>document.getElementById('btn-paste') as HTMLAnchorElement).onclick = paste;
+(<any>document.getElementById('btn-delete') as HTMLAnchorElement).onclick = deleteStr;
+(<any>document.getElementById('btn-sel-all') as HTMLAnchorElement).onclick = () => {
     textArea.setSelectionRange(0, textArea.value.length);
 }
 
-document.getElementById('btn-search').onclick = search;
+(<any>document.getElementById('btn-search') as HTMLAnchorElement).onclick = search;
 
-document.querySelectorAll('.btns-find-next').forEach((element) => {
-    element.onclick = findNext;
+document.querySelectorAll<any>('.btns-find-next').forEach((element) => {
+    (<HTMLAnchorElement><any>element).onclick = findNext;
 });
-document.querySelectorAll('.btns-find-prev').forEach((element) => {
-    element.onclick = findPrev;
+document.querySelectorAll<any>('.btns-find-prev').forEach((element) => {
+    (<HTMLAnchorElement><any>element).onclick = findPrev;
 });
 
-document.getElementById('btn-find').onclick = () => {
+(<any>document.getElementById('btn-find') as HTMLAnchorElement).onclick = () => {
     findModal.show();
 }
-//document.getElementById('btn-replace').onclick = () => {
+//document.getElementById('btn-replace')?.onclick = () => {
 //    findModal.show();
 //}
 
-document.getElementById('btn-font').onclick = () => {
+(<any>document.getElementById('btn-font') as HTMLAnchorElement).onclick = () => {
     fontModal.show();
 }
 
-document.getElementById('find-text').oninput = () => {
+(<any>document.getElementById('find-text') as HTMLInputElement).oninput = () => {
     findIndex = 0;
 }
 
-document.getElementById('btn-goto').onclick = gotoLine;
+(<any>document.getElementById('btn-goto') as HTMLAnchorElement).onclick = gotoLine;
 
 document.onkeydown = async (e) => {
     if (e.ctrlKey) {
@@ -410,7 +431,7 @@ document.onkeydown = async (e) => {
     }
 }
 
-let fontPostscriptDict: { string: {'family': string, 'style': string} } = {
+let fontPostscriptDict: any = {
     // NOTE: These are preset fonts. not postscript name and defined in modal's options (value attribute).
     'serif': { 'family': 'serif', 'style': 'regular' },
     'sans-serif': { 'family': 'sans-serif', 'style': 'regular' },
@@ -430,9 +451,9 @@ let fontPostscriptDict: { string: {'family': string, 'style': string} } = {
 const fontSize = document.getElementById('font-size') as HTMLInputElement;
 {
     const sampleArea = document.getElementById('font-sample') as HTMLDivElement;
-    const fontList = document.getElementById('font-family');
+    const fontList = document.getElementById('font-family') as HTMLSelectElement;
     fontList.onchange = () => {
-        const postScriptName = (document.getElementById('font-family') as HTMLSelectElement).value;
+        const postScriptName = fontList.value;
         const fontInfo = fontPostscriptDict[postScriptName];
         sampleArea.style.fontFamily = fontInfo.family;
         sampleArea.style.fontStyle = fontInfo.style;
@@ -453,9 +474,9 @@ const fontSize = document.getElementById('font-size') as HTMLInputElement;
     }
 
 
-    if (window.queryLocalFonts !== undefined) {
-        let fontFamilies: {string: FontData[]} = {};
-        const fonts: FontData[] = await window.queryLocalFonts();
+    if ("queryLocalFonts" in window) {
+        let fontFamilies: any = {};
+        const fonts: any/*FontData*/[] = await (window as any).queryLocalFonts();
         for (const font of fonts) {
             if (fontFamilies[font.family] === undefined) {
                 fontFamilies[font.family] = [];
@@ -471,7 +492,7 @@ const fontSize = document.getElementById('font-size') as HTMLInputElement;
         Object.keys(fontFamilies).forEach((family) => {
             const optGroup = document.createElement('optgroup');
             optGroup.label = family;
-            fontFamilies[family].forEach((font) => {
+            fontFamilies[family].forEach((font: any/*FontData*/) => {
                 const option = document.createElement('option');
                 option.value = font.postscriptName;
                 option.innerText = font.fullName;
@@ -484,8 +505,11 @@ const fontSize = document.getElementById('font-size') as HTMLInputElement;
     }
 }
 
-document.getElementById('btn-font-apply').onclick = () => {
+(document.getElementById('btn-font-apply') as HTMLButtonElement).onclick = () => {
     const postScriptName = (document.getElementById('font-family') as HTMLSelectElement).value;
+    if (fontPostscriptDict[postScriptName] === undefined) {
+        return;
+    }
     const fontInfo = fontPostscriptDict[postScriptName];
 
     textArea.style.fontFamily = fontInfo.family;

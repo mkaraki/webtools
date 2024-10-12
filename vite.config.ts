@@ -24,6 +24,7 @@ export default defineConfig({
                 resolve(__dirname, 'pages/string/notepad.html'),
             ]
         },
+        target: ['edge129'],
     },
     plugins: [
         simpleHtmlPlugin({
