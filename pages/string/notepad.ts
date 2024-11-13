@@ -431,6 +431,9 @@ document.onkeydown = async (e) => {
     }
 }
 
+textArea.onselectionchange = selectionChange;
+textArea.oninput = changeContent;
+
 let fontPostscriptDict: any = {
     // NOTE: These are preset fonts. not postscript name and defined in modal's options (value attribute).
     'serif': { 'family': 'serif', 'style': 'regular' },
@@ -533,6 +536,3 @@ const fontSize = document.getElementById('font-size') as HTMLInputElement;
 
     fontModal.hide();
 }
-
-textArea.onselectionchange = selectionChange;
-textArea.oninput = changeContent;
