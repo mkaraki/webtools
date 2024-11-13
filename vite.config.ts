@@ -22,6 +22,7 @@ export default defineConfig({
                 resolve(__dirname, 'pages/string/ascii_table.html'),
                 resolve(__dirname, 'pages/string/string_counter.html'),
                 resolve(__dirname, 'pages/string/notepad.html'),
+                resolve(__dirname, 'pages/string/multi_line_to_single_line.html'),
             ]
         },
         target: ['edge129'],
