@@ -37,9 +37,11 @@ jobs:
           ${{ runner.os }}-pnpm-store-
 
     - run: pnpm install --frozen-lockfile
+      working-directory: ./js
 
     - uses: cypress-io/github-action@v6
       with:
         build: pnpm run build
         start: pnpm run vite-test-preview
         browser: chrome
+      working-directory: ./js
