@@ -346,9 +346,73 @@ document.querySelectorAll<any>('.btns-find-prev').forEach((element) => {
 //    findModal.show();
 //}
 
-(<any>document.getElementById('btn-font') as HTMLAnchorElement).onclick = () => {
-    fontModal.show();
+let fontQueried = false;
+const fontSize = document.getElementById('font-size') as HTMLInputElement;
+const fontList = document.getElementById('font-family') as HTMLSelectElement;
+
+{
+    const sampleArea = document.getElementById('font-sample') as HTMLDivElement;
+    fontList.onchange = () => {
+        const postScriptName = fontList.value;
+        const fontInfo = fontPostscriptDict[postScriptName];
+        sampleArea.style.fontFamily = fontInfo.family;
+        sampleArea.style.fontStyle = fontInfo.style;
+    }
+    fontSize.oninput = () => {
+        const strSize = fontSize.value;
+        const size = parseFloat(strSize);
+
+        if (size <= 0) {
+            return;
+        }
+
+        if (isNaN(size)) {
+            return;
+        }
+
+        sampleArea.style.fontSize = strSize + 'pt';
+    }
 }
+
+(<any>document.getElementById('btn-font') as HTMLAnchorElement).onclick = () => {
+    if (!fontQueried) {
+        if ("queryLocalFonts" in window) {
+            let fontFamilies: any = {};
+            (window as any).queryLocalFonts().then((fonts: any[] /*FontData[]*/) => {
+                for (const font of fonts) {
+                    if (fontFamilies[font.family] === undefined) {
+                        fontFamilies[font.family] = [];
+                    }
+
+                    fontFamilies[font.family].push(font);
+
+                    if (fontPostscriptDict[font.postscriptName] === undefined) {
+                        fontPostscriptDict[font.postscriptName] = { 'family': font.family, 'style': font.style };
+                    }
+                }
+
+                Object.keys(fontFamilies).forEach((family) => {
+                    const optGroup = document.createElement('optgroup');
+                    optGroup.label = family;
+                    fontFamilies[family].forEach((font: any/*FontData*/) => {
+                        const option = document.createElement('option');
+                        option.value = font.postscriptName;
+                        option.innerText = font.fullName;
+                        option.style.fontFamily = font.family;
+                        option.style.fontStyle = font.style;
+                        optGroup.appendChild(option);
+                    });
+                    fontList.appendChild(optGroup);
+                });
+
+                fontQueried = true;
+            });
+        } else {
+            fontQueried = false;
+        }
+    }
+    fontModal.show();
+};
 
 (<any>document.getElementById('find-text') as HTMLInputElement).oninput = () => {
     findIndex = 0;
@@ -450,63 +514,6 @@ let fontPostscriptDict: any = {
     'math': { 'family': 'math', 'style': 'regular' },
     'fangsong': { 'family': 'fangsong', 'style': 'regular' },
 };
-
-const fontSize = document.getElementById('font-size') as HTMLInputElement;
-{
-    const sampleArea = document.getElementById('font-sample') as HTMLDivElement;
-    const fontList = document.getElementById('font-family') as HTMLSelectElement;
-    fontList.onchange = () => {
-        const postScriptName = fontList.value;
-        const fontInfo = fontPostscriptDict[postScriptName];
-        sampleArea.style.fontFamily = fontInfo.family;
-        sampleArea.style.fontStyle = fontInfo.style;
-    }
-    fontSize.oninput = () => {
-        const strSize = fontSize.value;
-        const size = parseFloat(strSize);
-
-        if (size <= 0) {
-            return;
-        }
-
-        if (isNaN(size)) {
-            return;
-        }
-
-        sampleArea.style.fontSize = strSize + 'pt';
-    }
-
-
-    if ("queryLocalFonts" in window) {
-        let fontFamilies: any = {};
-        const fonts: any/*FontData*/[] = await (window as any).queryLocalFonts();
-        for (const font of fonts) {
-            if (fontFamilies[font.family] === undefined) {
-                fontFamilies[font.family] = [];
-            }
-
-            fontFamilies[font.family].push(font);
-
-            if (fontPostscriptDict[font.postscriptName] === undefined) {
-                fontPostscriptDict[font.postscriptName] = { 'family': font.family, 'style': font.style };
-            }
-        }
-
-        Object.keys(fontFamilies).forEach((family) => {
-            const optGroup = document.createElement('optgroup');
-            optGroup.label = family;
-            fontFamilies[family].forEach((font: any/*FontData*/) => {
-                const option = document.createElement('option');
-                option.value = font.postscriptName;
-                option.innerText = font.fullName;
-                option.style.fontFamily = font.family;
-                option.style.fontStyle = font.style;
-                optGroup.appendChild(option);
-            });
-            fontList.appendChild(optGroup);
-        });
-    }
-}
 
 (document.getElementById('btn-font-apply') as HTMLButtonElement).onclick = () => {
     const postScriptName = (document.getElementById('font-family') as HTMLSelectElement).value;
