@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Space converter</title>
+</head>
+
+<body id="body">
+    <header>
+        <h1>Tab space converter</h1>
+        <hr />
+    </header>
+
+    <div>
+        <div>
+            <label for="str">Input</label>
+            <textarea id="str" cols="30" rows="10"></textarea>
+        </div>
+        <div>
+            <label for="spacing">Space</label>
+            <input type="number" min="0" value="2" id="spacing"> 
+        </div>
+        <div>
+            <button id="tabToSpace" role="button">Tab to space</button>
+            <button id="spaceToTab" role="button">Space to tab</button>
+        </div>
+    </div>
+
+    <div>
+        <div>
+            <label for="output">Output</label>
+            <textarea id="output" cols="30" rows="10"></textarea>
+        </div>
+    </div>
+
+    <script type="module" src="tab_swap.ts"></script>
+</body>
+
+</html>

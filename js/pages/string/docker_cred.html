@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Config Json Auth Generator</title>
+    <style>
+        .text-red { color: red; }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Docker Config Json Auth Generator</h1>
+        <hr />
+    </header>
+
+    <section>
+        <h2>Username, Password to Authorization Header</h2>
+        <form id="login-basic-form" action="">
+            <div>
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username">
+            </div>
+            <div>
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password">
+            </div>
+            <div>
+                <input type="submit" value="Process">
+            </div>
+            <div>
+                Login:
+                <code id="login-basic-url-result"></code>
+            </div>
+            <div>
+                <code>Authorization: Basic</code>
+                <code id="login-basic-token-result"></code>
+            </div>
+        </form>
+        <hr />
+    </section>
+
+    <section>
+        <h2><code>.dockerconfigjson</code> auth info generator</h2>
+        <form id="auth-gen-form" action="">
+            <div>
+                <label for="auth-gen-domain">Domain (Comma separated)</label>
+                <input type="text" id="auth-gen-domain">
+            </div>
+            <div>
+                <label for="auth-gen-token">Auth token</label>
+                <input type="text" id="auth-gen-token">
+            </div>
+            <div>
+                <input type="submit" value="Process">
+            </div>
+            <div>
+                <code>.dockerconfigjson</code>:
+                <code id="auth-gen-json-result"></code>
+            </div>
+            <hr />
+            <div><pre><code>apiVersion: v1
+kind: Secret
+metadata:
+  name: <span class="text-red">your-secret-name</span>
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: <span class="text-red" id="auth-gen-b64-result"></span></code></pre>
+            </div>
+        </form>
+        <hr />
+    </section>
+
+    <script>
+        const authGenDomain = document.getElementById('auth-gen-domain');
+
+        const loginBasicForm = document.getElementById('login-basic-form');
+        const authGenForm = document.getElementById('auth-gen-form');
+
+        loginBasicForm.onsubmit = (e) => {
+            const urlEncodedUser = encodeURI(document.getElementById('login-username').value);
+            const urlEncodedPass = encodeURI(document.getElementById('login-password').value);
+
+            if (urlEncodedPass.startsWith('dckr_pat_')) {
+                authGenDomain.value = 'docker.io,dhi.io';
+            }
+
+            const loginUrl = `${urlEncodedUser}:${urlEncodedPass}`;
+            document.getElementById('login-basic-url-result').innerText = loginUrl;
+            const loginToken = btoa(loginUrl);
+            document.getElementById('login-basic-token-result').innerText = loginToken;
+            document.getElementById('auth-gen-token').value = loginToken;
+
+            return false;
+        };
+
+        authGenForm.onsubmit = (e) => {
+            const regDomain = authGenDomain.value;
+            const regAuth = document.getElementById('auth-gen-token').value;
+            let jsonObj = {
+                auths: {},
+            };
+            regDomain.split(',').forEach((domain) => {
+                const trimmedDomain = domain.trim();
+                jsonObj.auths[trimmedDomain] = {auth: regAuth};
+            });
+            const jsonStr = JSON.stringify(jsonObj);
+            document.getElementById('auth-gen-json-result').innerText = jsonStr;
+            document.getElementById('auth-gen-b64-result').innerText = btoa(jsonStr);
+            return false;
+        };
+    </script>
+</body>
+
+</html>

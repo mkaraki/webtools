@@ -23,6 +23,8 @@ export default defineConfig({
                 resolve(__dirname, 'pages/string/string_counter.html'),
                 resolve(__dirname, 'pages/string/notepad.html'),
                 resolve(__dirname, 'pages/string/multi_line_to_single_line.html'),
+                resolve(__dirname, 'pages/string/docker_cred.html'),
+                resolve(__dirname, 'pages/string/tab_swap.html'),
             ]
         },
         target: ['edge129'],
