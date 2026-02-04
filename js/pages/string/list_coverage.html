@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2 List Coverage</title>
+    <style>
+        .text-red { color: red; }
+        textarea {
+            width: calc(50% - 15px);
+            height: 30vh;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>2 List Coverage</h1>
+        <hr />
+    </header>
+
+    <main>
+        <div>
+            <textarea id="list-1" placeholder="List 1"></textarea>
+            <textarea id="list-2" placeholder="List 2"></textarea>
+        </div>
+        <div>
+            <button onclick="list_compare()">Compare</button>
+        </div>
+        <hr />
+        <div>
+            <textarea id="list-1-output" placeholder="List 1 compare result" readonly></textarea>
+            <textarea id="list-2-output" placeholder="List 2 compare result" readonly></textarea>
+        </div>
+        <p class="text-red" id="error-log"></p>
+    </main>
+
+    <script>
+        const list_compare = () => {
+            const list1_items = document.getElementById('list-1').value.replace("\r\n", "\n").split("\n");
+            const list2_items = document.getElementById('list-2').value.replace("\r\n", "\n").split("\n");
+            
+            let list1_items_exists_in_list2 = [];
+            let list1_items_not_exists_in_list2 = [];
+            for (let i = 0; i < list1_items.length; i++) {
+                const v = list1_items[i];
+                if (list2_items.includes(v)) {
+                    list1_items_exists_in_list2.push(v);
+                } else {
+                    list1_items_not_exists_in_list2.push(v);
+                }
+            }
+            
+            document.getElementById('list-1-output').value = `${list1_items_exists_in_list2.length}/${list1_items.length} items are same as list2
+
+ITEMS IN LIST2:
+${list1_items_exists_in_list2.join("\n")}
+
+ITEMS NOT IN LIST2:
+${list1_items_not_exists_in_list2.join("\n")}`;
+            
+            let list2_items_exists_in_list1 = [];
+            let list2_items_not_exists_in_list1 = [];
+            for (let i = 0; i < list2_items.length; i++) {
+                const v = list2_items[i];
+                if (list1_items.includes(v)) {
+                    list2_items_exists_in_list1.push(v);
+                } else {
+                    list2_items_not_exists_in_list1.push(v);
+                }
+            }
+
+            document.getElementById('list-2-output').value = `${list2_items_exists_in_list1.length}/${list2_items.length} items are same as list1
+
+ITEMS IN LIST1:
+${list2_items_exists_in_list1.join("\n")}
+
+ITEMS NOT IN LIST1:
+${list2_items_not_exists_in_list1.join("\n")}`;
+        };
+    </script>
+</body>
+
+</html>
