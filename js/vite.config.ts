@@ -25,6 +25,7 @@ export default defineConfig({
                 resolve(__dirname, 'pages/string/multi_line_to_single_line.html'),
                 resolve(__dirname, 'pages/string/docker_cred.html'),
                 resolve(__dirname, 'pages/string/tab_swap.html'),
+                resolve(__dirname, 'pages/string/list_coverage.html'),
                 resolve(__dirname, 'pages/datatype/json_pretty.html'),
             ]
         },
