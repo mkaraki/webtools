@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Prettier</title>
+    <style>
+        .text-red { color: red; }
+        textarea {
+            width: calc(100% - 15px);
+            height: 30vh;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>JSON Prettier</h1>
+        <hr />
+    </header>
+
+    <main>
+        <textarea id="json-str" placeholder="JSON here"></textarea><br />
+        <button onclick="json_pretty()">Pretty</button>
+        <button onclick="json_compress()">Compress</button>
+        <hr />
+        <textarea id="json-output" placeholder="Output JSON here" readonly></textarea>
+        <p class="text-red" id="error-log"></p>
+    </main>
+
+    <script>
+        const input = document.getElementById('json-str');
+        const output = document.getElementById('json-output');
+        const error = document.getElementById('error-log');
+
+        const read_json = () => {
+            const original_json_str = input.value;
+            console.log(original_json_str);
+            try {
+                return JSON.parse(original_json_str);
+            }
+            catch (e) {
+                error.innerText = `Failed to parse JSON: ${e}. See console for details.`;
+                console.error(e);
+                throw e;
+            }
+        }
+
+        const json_pretty = () => {
+            const data = read_json();
+            output.value = JSON.stringify(data, null, 2);
+        }
+
+        const json_compress = () => {
+            const data = read_json();
+            output.value = JSON.stringify(data, null, 0);
+        }
+    </script>
+</body>
+
+</html>
