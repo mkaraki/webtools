@@ -1,6 +1,7 @@
 import { dnsRecordTypes, resolveSimplyWithDoH } from '../../utils/net/doh_resolver.js';
 import { getPtrAcceptableAddress } from '../../utils/net/ip_address.js';
 import { putStringToInputOrInnerText } from '../../utils/ts/html.js';
+import { setLoadingState } from "../../utils/loading.ts";
 
 const registerDnsRecordTypesAsHtmlOptions = (
     selectableElement: HTMLSelectElement | HTMLDataListElement,
@@ -21,6 +22,7 @@ const setupDoHResolver = (
     button: HTMLButtonElement,
 ): void => {
     button.onclick = () => {
+        setLoadingState(true);
         resolveSimplyWithDoH(
             fqdnInput.value,
             typeInput.value,
@@ -49,6 +51,9 @@ const setupDoHResolver = (
                 resultElement.appendChild(tr);
             });
             button.disabled = false;
+        })
+        .finally(() => {
+            setLoadingState(false);
         });
     };
 };

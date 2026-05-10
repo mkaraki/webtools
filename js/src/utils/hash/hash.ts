@@ -2,8 +2,9 @@ const calculateSHA512HashFromArrayBuffer = (aryBuffer: ArrayBuffer): Promise<str
     return crypto.subtle.digest('SHA-512', aryBuffer).then((d) => {
         let bin = '';
         let bytes = new Uint8Array(d);
-        for (let i = 0; i < bytes.byteLength; i++)
-            bin += String.fromCharCode(bytes[i]);
+        for (let i = 0; i < bytes.byteLength; i++) {
+            bin += String.fromCharCode(bytes[i] as number);
+        }
         const b64hash: string = btoa(bin);
         return b64hash;
     });

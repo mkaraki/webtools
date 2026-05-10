@@ -6,6 +6,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRI Hash Generator</title>
+    <link href="/dist/styles/loading.css" rel="stylesheet">
+    <style>
+        code {
+            overflow-wrap: break-word;
+        }
+
+        code>span {
+            color: red;
+        }
+    </style>
 </head>
 
 <body id="body">
@@ -14,9 +24,42 @@
         <hr />
     </header>
 
-    <div id="app"></div>
+    <div id="app">
+        <main>
+            <section>
+                <h2>From URL</h2>
+                <form onsubmit="return false">
+                    <div>
+                        <label for="uri">URL</label>
+                        <input type="url" id="uri" size="60">
+                    </div>
+                    <div>
+                        <input type="submit" value="Calc" id="btn-calc">
+                    </div>
+                </form>
+            </section>
 
-    <script type="module" src="sri_hash_calc.ts"></script>
+            <section>
+                <h2>Result</h2>
+                <code class="sri"></code>
+            </section>
+
+            <section>
+                <h2>Usage</h2>
+                <div>
+                    JavaScript:<br />
+                    <code>&lt;script src="<span class="uri">URL</span>" integrity="<span class="sri">Hash</span>" crossorigin="anonymous"&gt;&lt;/script&gt;</code>
+                </div>
+                <br />
+                <div>
+                    CSS:<br />
+                    <code>&lt;link rel="stylesheet" href="<span class="uri">URL</span>" integrity="<span class="sri">Hash</span>" crossorigin="anonymous"&gt;</code>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/dist/html/sri_hash_calc.js" type="module"></script>
 </body>
 
 </html>

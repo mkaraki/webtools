@@ -1,4 +1,4 @@
-import { generateSecureRandomUint32 } from "../ts/random"
+import { generateSecureRandomUint32 } from "../ts/random.ts"
 
 const generateEngineId = (): string => { 
     const rand24 = generateSecureRandomUint32(3);
@@ -6,8 +6,8 @@ const generateEngineId = (): string => {
     const engineId = Array.from(rand24)
         .map((v): string => { return v.toString(16).padStart(8, '0')})
         .join('');
-    
-    return engineId
+
+    return engineId;
 }
 
 export {

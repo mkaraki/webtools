@@ -10,7 +10,7 @@ const fixGeneratedRandomAsciiCharByte = (byte: number, randomGenerator: RandomUi
         byte -= 0b1000_0000;
 
     if (filter.indexOf(String.fromCharCode(byte)) === -1) {
-        return fixGeneratedRandomAsciiCharByte(randomGenerator(1)[0], randomGenerator, filter);
+        return fixGeneratedRandomAsciiCharByte(randomGenerator(1)[0] as number, randomGenerator, filter);
     }
 
     return byte;
@@ -23,9 +23,7 @@ const generateRandomAsciiString = (length: number, randomGenerator: RandomUint8G
         filter = ASCII_NUMBERS + ASCII_UPPERCASE_CHARS + ASCII_LOWERCASE_CHARS + ASCII_SPECIAL_CHARS;
 
     for (let i = 0; i < length; i++) {
-        let cur = randomBytes[i];
-
-        randomBytes[i] = fixGeneratedRandomAsciiCharByte(cur, randomGenerator, filter);
+        randomBytes[i] = fixGeneratedRandomAsciiCharByte(randomBytes[i] as number, randomGenerator, filter);
     }
 
     return String.fromCharCode(...randomBytes);
