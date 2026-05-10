@@ -4,4 +4,6 @@
 
 mkdir out
 cp index.html out
+cp 404.html out
 cp -r dist out/dist
+cp -r pages out/pages
