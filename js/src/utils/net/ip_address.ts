@@ -3,8 +3,13 @@ const isIPv4Address = (addr: string): boolean => {
         return false;
 
     const splitted = addr.split('.');
+    if (splitted.length !== 4) {
+        // This won't support non 4 octet IP address (e.g. 192.2)
+        return false;
+    }
+    //splitted = splitted as [string, string, string, string];
     for (let i = 0; i < 4; i++) {
-        const octet = parseInt(splitted[i]);
+        const octet = parseInt(splitted[i] as string);
         if (octet < 0 || octet > 255) return false;
     }
 
@@ -37,13 +42,13 @@ const convertToIPv6AddressWithoutEmptyAndSeparator = (fromIp: string): string | 
     if (!isIPv6AddressRegexMatch(fromIp))
         return null;
 
-    const shorten = fromIp.split('::');
+    let shorten = fromIp.split('::');
     if (shorten.length > 2) {
         return null;
     }
     if (shorten.length == 1) {
         // No shorten (`::` not found)
-        const octets = shorten[0].split(':');
+        const octets = (shorten[0] as string).split(':');
         if (octets.length != 8) {
             return null;
         }
@@ -54,8 +59,8 @@ const convertToIPv6AddressWithoutEmptyAndSeparator = (fromIp: string): string | 
         });
         return result;
     }
-    const beg = shorten[0].split(':');
-    const end = shorten.length == 2 ? shorten[1].split(':') : [];
+    const beg = (shorten[0] as string).split(':');
+    const end = shorten.length == 2 ? (shorten[1] as string).split(':') : [];
     const lsec = 8 - beg.length - end.length;
     let secs = '';
     [beg, Array(lsec).fill('0'), end].forEach(i => i.forEach(v => {
@@ -82,7 +87,7 @@ const convertToIPv6AddressWithoutEmpty = (fromIp: string): string | null => {
 const getPtrAcceptableAddress = (fromIp: string): string | null => {
     if (isIPv4Address(fromIp)) {
         // v4 convert
-        const splitted = fromIp.split('.');
+        const splitted = fromIp.split('.') as [string, string, string, string];
         const ret = `${parseInt(splitted[3])}.${parseInt(splitted[2])}.${parseInt(splitted[1])}.${parseInt(splitted[0])}`
             + '.in-addr.arpa.';
         return ret;
@@ -98,31 +103,42 @@ const getPtrAcceptableAddress = (fromIp: string): string | null => {
     }
 }
 
-const formatIPv6OctetNumbersToStringAddress = (octets: number[] | Uint16Array): string | null => {
+const formatIPv6OctetNumbersToStringAddress = (octets: IPv6NumberedOctet | Uint16Array): string | null => {
     let result = '';
     if (octets.length != 8) return null;
     for (let i = 0; i < 8; i++) {
-        result += octets[i].toString(16);
+        result += (octets[i] as number).toString(16);
         if (i != 7)
             result += ':';
     }
     return result;
 }
 
-const formatIPv6OctetNumbersToStringAddressPartiallyFromStart = (octets: number[] | Uint16Array, octetCount: number): string => {
+const formatIPv6OctetNumbersToStringAddressPartiallyFromStart = (octets: IPv6NumberedOctet | Uint16Array, octetCount: number): string => {
     let result = '';
     if (octetCount > 8) octetCount = 8;
     for (let i = 0; i < octetCount; i++) {
-        result += octets[i].toString(16);
+        result += (octets[i] as number).toString(16);
         if (i != octetCount - 1)
             result += ':';
     }
     return result;
 }
 
+type IPv4NumberedOctet = [number, number, number, number];
+type IPv6NumberedOctet = [number, number, number, number, number, number, number, number];
+type IPAddressNumberedOctet = IPv4NumberedOctet | IPv6NumberedOctet;
 
-const IPv4OctetBasedNetMasks = [[0, 0, 0, 0], [128, 0, 0, 0], [192, 0, 0, 0], [224, 0, 0, 0], [240, 0, 0, 0], [248, 0, 0, 0], [252, 0, 0, 0], [254, 0, 0, 0], [255, 0, 0, 0], [255, 128, 0, 0], [255, 192, 0, 0], [255, 224, 0, 0], [255, 240, 0, 0], [255, 248, 0, 0], [255, 252, 0, 0], [255, 254, 0, 0], [255, 255, 0, 0], [255, 255, 128, 0], [255, 255, 192, 0], [255, 255, 224, 0], [255, 255, 240, 0], [255, 255, 248, 0], [255, 255, 252, 0], [255, 255, 254, 0], [255, 255, 255, 0], [255, 255, 255, 128], [255, 255, 255, 192], [255, 255, 255, 224], [255, 255, 255, 240], [255, 255, 255, 248], [255, 255, 255, 252], [255, 255, 255, 254], [255, 255, 255, 255]];
-const IPv6OctetBasedNetMasks = [[0, 0, 0, 0, 0, 0, 0, 0], [32768, 0, 0, 0, 0, 0, 0, 0], [49152, 0, 0, 0, 0, 0, 0, 0], [57344, 0, 0, 0, 0, 0, 0, 0], [61440, 0, 0, 0, 0, 0, 0, 0], [63488, 0, 0, 0, 0, 0, 0, 0], [64512, 0, 0, 0, 0, 0, 0, 0], [65024, 0, 0, 0, 0, 0, 0, 0], [65280, 0, 0, 0, 0, 0, 0, 0], [65408, 0, 0, 0, 0, 0, 0, 0], [65472, 0, 0, 0, 0, 0, 0, 0], [65504, 0, 0, 0, 0, 0, 0, 0], [65520, 0, 0, 0, 0, 0, 0, 0], [65528, 0, 0, 0, 0, 0, 0, 0], [65532, 0, 0, 0, 0, 0, 0, 0], [65534, 0, 0, 0, 0, 0, 0, 0], [65535, 0, 0, 0, 0, 0, 0, 0], [65535, 32768, 0, 0, 0, 0, 0, 0], [65535, 49152, 0, 0, 0, 0, 0, 0], [65535, 57344, 0, 0, 0, 0, 0, 0], [65535, 61440, 0, 0, 0, 0, 0, 0], [65535, 63488, 0, 0, 0, 0, 0, 0], [65535, 64512, 0, 0, 0, 0, 0, 0], [65535, 65024, 0, 0, 0, 0, 0, 0], [65535, 65280, 0, 0, 0, 0, 0, 0], [65535, 65408, 0, 0, 0, 0, 0, 0], [65535, 65472, 0, 0, 0, 0, 0, 0], [65535, 65504, 0, 0, 0, 0, 0, 0], [65535, 65520, 0, 0, 0, 0, 0, 0], [65535, 65528, 0, 0, 0, 0, 0, 0], [65535, 65532, 0, 0, 0, 0, 0, 0], [65535, 65534, 0, 0, 0, 0, 0, 0], [65535, 65535, 0, 0, 0, 0, 0, 0], [65535, 65535, 32768, 0, 0, 0, 0, 0], [65535, 65535, 49152, 0, 0, 0, 0, 0], [65535, 65535, 57344, 0, 0, 0, 0, 0], [65535, 65535, 61440, 0, 0, 0, 0, 0], [65535, 65535, 63488, 0, 0, 0, 0, 0], [65535, 65535, 64512, 0, 0, 0, 0, 0], [65535, 65535, 65024, 0, 0, 0, 0, 0], [65535, 65535, 65280, 0, 0, 0, 0, 0], [65535, 65535, 65408, 0, 0, 0, 0, 0], [65535, 65535, 65472, 0, 0, 0, 0, 0], [65535, 65535, 65504, 0, 0, 0, 0, 0], [65535, 65535, 65520, 0, 0, 0, 0, 0], [65535, 65535, 65528, 0, 0, 0, 0, 0], [65535, 65535, 65532, 0, 0, 0, 0, 0], [65535, 65535, 65534, 0, 0, 0, 0, 0], [65535, 65535, 65535, 0, 0, 0, 0, 0], [65535, 65535, 65535, 32768, 0, 0, 0, 0], [65535, 65535, 65535, 49152, 0, 0, 0, 0], [65535, 65535, 65535, 57344, 0, 0, 0, 0], [65535, 65535, 65535, 61440, 0, 0, 0, 0], [65535, 65535, 65535, 63488, 0, 0, 0, 0], [65535, 65535, 65535, 64512, 0, 0, 0, 0], [65535, 65535, 65535, 65024, 0, 0, 0, 0], [65535, 65535, 65535, 65280, 0, 0, 0, 0], [65535, 65535, 65535, 65408, 0, 0, 0, 0], [65535, 65535, 65535, 65472, 0, 0, 0, 0], [65535, 65535, 65535, 65504, 0, 0, 0, 0], [65535, 65535, 65535, 65520, 0, 0, 0, 0], [65535, 65535, 65535, 65528, 0, 0, 0, 0], [65535, 65535, 65535, 65532, 0, 0, 0, 0], [65535, 65535, 65535, 65534, 0, 0, 0, 0], [65535, 65535, 65535, 65535, 0, 0, 0, 0], [65535, 65535, 65535, 65535, 32768, 0, 0, 0], [65535, 65535, 65535, 65535, 49152, 0, 0, 0], [65535, 65535, 65535, 65535, 57344, 0, 0, 0], [65535, 65535, 65535, 65535, 61440, 0, 0, 0], [65535, 65535, 65535, 65535, 63488, 0, 0, 0], [65535, 65535, 65535, 65535, 64512, 0, 0, 0], [65535, 65535, 65535, 65535, 65024, 0, 0, 0], [65535, 65535, 65535, 65535, 65280, 0, 0, 0], [65535, 65535, 65535, 65535, 65408, 0, 0, 0], [65535, 65535, 65535, 65535, 65472, 0, 0, 0], [65535, 65535, 65535, 65535, 65504, 0, 0, 0], [65535, 65535, 65535, 65535, 65520, 0, 0, 0], [65535, 65535, 65535, 65535, 65528, 0, 0, 0], [65535, 65535, 65535, 65535, 65532, 0, 0, 0], [65535, 65535, 65535, 65535, 65534, 0, 0, 0], [65535, 65535, 65535, 65535, 65535, 0, 0, 0], [65535, 65535, 65535, 65535, 65535, 32768, 0, 0], [65535, 65535, 65535, 65535, 65535, 49152, 0, 0], [65535, 65535, 65535, 65535, 65535, 57344, 0, 0], [65535, 65535, 65535, 65535, 65535, 61440, 0, 0], [65535, 65535, 65535, 65535, 65535, 63488, 0, 0], [65535, 65535, 65535, 65535, 65535, 64512, 0, 0], [65535, 65535, 65535, 65535, 65535, 65024, 0, 0], [65535, 65535, 65535, 65535, 65535, 65280, 0, 0], [65535, 65535, 65535, 65535, 65535, 65408, 0, 0], [65535, 65535, 65535, 65535, 65535, 65472, 0, 0], [65535, 65535, 65535, 65535, 65535, 65504, 0, 0], [65535, 65535, 65535, 65535, 65535, 65520, 0, 0], [65535, 65535, 65535, 65535, 65535, 65528, 0, 0], [65535, 65535, 65535, 65535, 65535, 65532, 0, 0], [65535, 65535, 65535, 65535, 65535, 65534, 0, 0], [65535, 65535, 65535, 65535, 65535, 65535, 0, 0], [65535, 65535, 65535, 65535, 65535, 65535, 32768, 0], [65535, 65535, 65535, 65535, 65535, 65535, 49152, 0], [65535, 65535, 65535, 65535, 65535, 65535, 57344, 0], [65535, 65535, 65535, 65535, 65535, 65535, 61440, 0], [65535, 65535, 65535, 65535, 65535, 65535, 63488, 0], [65535, 65535, 65535, 65535, 65535, 65535, 64512, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65024, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65280, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65408, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65472, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65504, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65520, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65528, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65532, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65534, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 32768], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 49152], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 57344], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 61440], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 63488], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 64512], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65024], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65280], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65408], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65472], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65504], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65520], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65528], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65532], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65534], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535]];;
+type IPv4OctetBasedNetMaskType = [
+    IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet, IPv4NumberedOctet
+];
+
+type IPv6OctetBasedNetMaskType = [
+    IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet, IPv6NumberedOctet
+];
+
+const IPv4OctetBasedNetMasks: IPv4OctetBasedNetMaskType = [[0, 0, 0, 0], [128, 0, 0, 0], [192, 0, 0, 0], [224, 0, 0, 0], [240, 0, 0, 0], [248, 0, 0, 0], [252, 0, 0, 0], [254, 0, 0, 0], [255, 0, 0, 0], [255, 128, 0, 0], [255, 192, 0, 0], [255, 224, 0, 0], [255, 240, 0, 0], [255, 248, 0, 0], [255, 252, 0, 0], [255, 254, 0, 0], [255, 255, 0, 0], [255, 255, 128, 0], [255, 255, 192, 0], [255, 255, 224, 0], [255, 255, 240, 0], [255, 255, 248, 0], [255, 255, 252, 0], [255, 255, 254, 0], [255, 255, 255, 0], [255, 255, 255, 128], [255, 255, 255, 192], [255, 255, 255, 224], [255, 255, 255, 240], [255, 255, 255, 248], [255, 255, 255, 252], [255, 255, 255, 254], [255, 255, 255, 255]];
+const IPv6OctetBasedNetMasks: IPv6OctetBasedNetMaskType = [[0, 0, 0, 0, 0, 0, 0, 0], [32768, 0, 0, 0, 0, 0, 0, 0], [49152, 0, 0, 0, 0, 0, 0, 0], [57344, 0, 0, 0, 0, 0, 0, 0], [61440, 0, 0, 0, 0, 0, 0, 0], [63488, 0, 0, 0, 0, 0, 0, 0], [64512, 0, 0, 0, 0, 0, 0, 0], [65024, 0, 0, 0, 0, 0, 0, 0], [65280, 0, 0, 0, 0, 0, 0, 0], [65408, 0, 0, 0, 0, 0, 0, 0], [65472, 0, 0, 0, 0, 0, 0, 0], [65504, 0, 0, 0, 0, 0, 0, 0], [65520, 0, 0, 0, 0, 0, 0, 0], [65528, 0, 0, 0, 0, 0, 0, 0], [65532, 0, 0, 0, 0, 0, 0, 0], [65534, 0, 0, 0, 0, 0, 0, 0], [65535, 0, 0, 0, 0, 0, 0, 0], [65535, 32768, 0, 0, 0, 0, 0, 0], [65535, 49152, 0, 0, 0, 0, 0, 0], [65535, 57344, 0, 0, 0, 0, 0, 0], [65535, 61440, 0, 0, 0, 0, 0, 0], [65535, 63488, 0, 0, 0, 0, 0, 0], [65535, 64512, 0, 0, 0, 0, 0, 0], [65535, 65024, 0, 0, 0, 0, 0, 0], [65535, 65280, 0, 0, 0, 0, 0, 0], [65535, 65408, 0, 0, 0, 0, 0, 0], [65535, 65472, 0, 0, 0, 0, 0, 0], [65535, 65504, 0, 0, 0, 0, 0, 0], [65535, 65520, 0, 0, 0, 0, 0, 0], [65535, 65528, 0, 0, 0, 0, 0, 0], [65535, 65532, 0, 0, 0, 0, 0, 0], [65535, 65534, 0, 0, 0, 0, 0, 0], [65535, 65535, 0, 0, 0, 0, 0, 0], [65535, 65535, 32768, 0, 0, 0, 0, 0], [65535, 65535, 49152, 0, 0, 0, 0, 0], [65535, 65535, 57344, 0, 0, 0, 0, 0], [65535, 65535, 61440, 0, 0, 0, 0, 0], [65535, 65535, 63488, 0, 0, 0, 0, 0], [65535, 65535, 64512, 0, 0, 0, 0, 0], [65535, 65535, 65024, 0, 0, 0, 0, 0], [65535, 65535, 65280, 0, 0, 0, 0, 0], [65535, 65535, 65408, 0, 0, 0, 0, 0], [65535, 65535, 65472, 0, 0, 0, 0, 0], [65535, 65535, 65504, 0, 0, 0, 0, 0], [65535, 65535, 65520, 0, 0, 0, 0, 0], [65535, 65535, 65528, 0, 0, 0, 0, 0], [65535, 65535, 65532, 0, 0, 0, 0, 0], [65535, 65535, 65534, 0, 0, 0, 0, 0], [65535, 65535, 65535, 0, 0, 0, 0, 0], [65535, 65535, 65535, 32768, 0, 0, 0, 0], [65535, 65535, 65535, 49152, 0, 0, 0, 0], [65535, 65535, 65535, 57344, 0, 0, 0, 0], [65535, 65535, 65535, 61440, 0, 0, 0, 0], [65535, 65535, 65535, 63488, 0, 0, 0, 0], [65535, 65535, 65535, 64512, 0, 0, 0, 0], [65535, 65535, 65535, 65024, 0, 0, 0, 0], [65535, 65535, 65535, 65280, 0, 0, 0, 0], [65535, 65535, 65535, 65408, 0, 0, 0, 0], [65535, 65535, 65535, 65472, 0, 0, 0, 0], [65535, 65535, 65535, 65504, 0, 0, 0, 0], [65535, 65535, 65535, 65520, 0, 0, 0, 0], [65535, 65535, 65535, 65528, 0, 0, 0, 0], [65535, 65535, 65535, 65532, 0, 0, 0, 0], [65535, 65535, 65535, 65534, 0, 0, 0, 0], [65535, 65535, 65535, 65535, 0, 0, 0, 0], [65535, 65535, 65535, 65535, 32768, 0, 0, 0], [65535, 65535, 65535, 65535, 49152, 0, 0, 0], [65535, 65535, 65535, 65535, 57344, 0, 0, 0], [65535, 65535, 65535, 65535, 61440, 0, 0, 0], [65535, 65535, 65535, 65535, 63488, 0, 0, 0], [65535, 65535, 65535, 65535, 64512, 0, 0, 0], [65535, 65535, 65535, 65535, 65024, 0, 0, 0], [65535, 65535, 65535, 65535, 65280, 0, 0, 0], [65535, 65535, 65535, 65535, 65408, 0, 0, 0], [65535, 65535, 65535, 65535, 65472, 0, 0, 0], [65535, 65535, 65535, 65535, 65504, 0, 0, 0], [65535, 65535, 65535, 65535, 65520, 0, 0, 0], [65535, 65535, 65535, 65535, 65528, 0, 0, 0], [65535, 65535, 65535, 65535, 65532, 0, 0, 0], [65535, 65535, 65535, 65535, 65534, 0, 0, 0], [65535, 65535, 65535, 65535, 65535, 0, 0, 0], [65535, 65535, 65535, 65535, 65535, 32768, 0, 0], [65535, 65535, 65535, 65535, 65535, 49152, 0, 0], [65535, 65535, 65535, 65535, 65535, 57344, 0, 0], [65535, 65535, 65535, 65535, 65535, 61440, 0, 0], [65535, 65535, 65535, 65535, 65535, 63488, 0, 0], [65535, 65535, 65535, 65535, 65535, 64512, 0, 0], [65535, 65535, 65535, 65535, 65535, 65024, 0, 0], [65535, 65535, 65535, 65535, 65535, 65280, 0, 0], [65535, 65535, 65535, 65535, 65535, 65408, 0, 0], [65535, 65535, 65535, 65535, 65535, 65472, 0, 0], [65535, 65535, 65535, 65535, 65535, 65504, 0, 0], [65535, 65535, 65535, 65535, 65535, 65520, 0, 0], [65535, 65535, 65535, 65535, 65535, 65528, 0, 0], [65535, 65535, 65535, 65535, 65535, 65532, 0, 0], [65535, 65535, 65535, 65535, 65535, 65534, 0, 0], [65535, 65535, 65535, 65535, 65535, 65535, 0, 0], [65535, 65535, 65535, 65535, 65535, 65535, 32768, 0], [65535, 65535, 65535, 65535, 65535, 65535, 49152, 0], [65535, 65535, 65535, 65535, 65535, 65535, 57344, 0], [65535, 65535, 65535, 65535, 65535, 65535, 61440, 0], [65535, 65535, 65535, 65535, 65535, 65535, 63488, 0], [65535, 65535, 65535, 65535, 65535, 65535, 64512, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65024, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65280, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65408, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65472, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65504, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65520, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65528, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65532, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65534, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 0], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 32768], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 49152], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 57344], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 61440], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 63488], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 64512], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65024], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65280], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65408], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65472], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65504], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65520], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65528], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65532], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65534], [65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535]];;
 
 export {
     isIPv4Address,
@@ -135,4 +151,7 @@ export {
     IPv6OctetBasedNetMasks,
     formatIPv6OctetNumbersToStringAddress,
     formatIPv6OctetNumbersToStringAddressPartiallyFromStart,
-}
+    type IPv4NumberedOctet,
+    type IPv6NumberedOctet,
+    type IPAddressNumberedOctet,
+};

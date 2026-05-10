@@ -30,34 +30,7 @@
         <p class="text-red" id="error-log"></p>
     </main>
 
-    <script>
-        const input = document.getElementById('json-str');
-        const output = document.getElementById('json-output');
-        const error = document.getElementById('error-log');
-
-        const read_json = () => {
-            const original_json_str = input.value;
-            console.log(original_json_str);
-            try {
-                return JSON.parse(original_json_str);
-            }
-            catch (e) {
-                error.innerText = `Failed to parse JSON: ${e}. See console for details.`;
-                console.error(e);
-                throw e;
-            }
-        }
-
-        const json_pretty = () => {
-            const data = read_json();
-            output.value = JSON.stringify(data, null, 2);
-        }
-
-        const json_compress = () => {
-            const data = read_json();
-            output.value = JSON.stringify(data, null, 0);
-        }
-    </script>
+    <script src="/dist/datatype/json_pretty.js"></script>
 </body>
 
 </html>
