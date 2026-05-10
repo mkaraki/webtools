@@ -8,13 +8,7 @@
     "server": "live-server .",
     "build": "tsc && sass src:dist"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.0",
-      "onFail": "download"
-    }
-  },
+  "packageManager": "pnpm@11.0.9",
   "type": "module",
   "devDependencies": {
     "live-server": "^1.2.2",
