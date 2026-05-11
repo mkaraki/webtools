@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>String Replace</title>
+    <style>
+        textarea {
+            width: calc(100% - 20px);
+            height: 20vh;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>String Replace</h1>
+        <hr />
+    </header>
+
+    <form onsubmit="return false">
+        <div>
+            <label for="replace-input">Input Text:</label><br>
+            <textarea id="replace-input"></textarea>
+        </div>
+        <div>
+            <label for="needle">Needle/Pattern:</label><br />
+            <textarea id="needle" rows="3" cols="40"></textarea>
+        </div>
+        <div>
+            <label for="flags">Flags: </label>
+            <input type="text" id="flags" placeholder="gi" size="5" aria-label="flags">
+        </div>
+        <div>
+            <label for="replacement">Replacement:</label><br />
+            <textarea id="replacement" rows="3" cols="40"></textarea>
+        </div>
+        <div>
+            <label for="method">Method:</label>
+            <select id="method">
+                <option value="replace">Replace (first)</option>
+                <option value="replaceAll">Replace All</option>
+                <option value="regex">Regex Replace</option>
+            </select>
+        </div>
+    </form>
+    <hr />
+
+    <section>
+        <label for="replace-output">Output:</label><br>
+        <textarea id="replace-output"></textarea>
+    </section>
+
+    <script>
+        const inputTextarea = document.getElementById('replace-input');
+        const needleInput = document.getElementById('needle');
+        const replacementInput = document.getElementById('replacement');
+        const methodSelect = document.getElementById('method');
+        const flagsInput = document.getElementById('flags');
+        const outputTextarea = document.getElementById('replace-output');
+
+        function updateOutput() {
+            const inputText = inputTextarea.value;
+            const needle = needleInput.value;
+            const replacement = replacementInput.value;
+            const method = methodSelect.value;
+            const flags = flagsInput.value;
+
+            let output = '';
+            try {
+                if (method === 'replace') {
+                    output = inputText.replace(needle, replacement);
+                } else if (method === 'replaceAll') {
+                    output = inputText.replaceAll(needle, replacement);
+                } else if (method === 'regex') {
+                    const regex = new RegExp(needle, flags);
+                    output = inputText.replace(regex, replacement);
+                }
+            } catch (e) {
+                output = 'Error: ' + e.message;
+            }
+            outputTextarea.value = output;
+        }
+
+        // Add event listeners
+        inputTextarea.addEventListener('input', updateOutput);
+        needleInput.addEventListener('input', updateOutput);
+        replacementInput.addEventListener('input', updateOutput);
+        methodSelect.addEventListener('change', updateOutput);
+        flagsInput.addEventListener('input', updateOutput);
+    </script>
+</body>
+
+</html>
