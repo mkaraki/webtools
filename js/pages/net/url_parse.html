@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/dist/styles/table.css" />
+    <title>URL Parser</title>
+    <style>
+        input[type=text] {
+            width: calc(100% - 20px);
+        }
+        .mono {
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .head-mono {
+            text-align: right;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body id="body">
+    <header>
+        <h1>URL Parser</h1>
+        <hr />
+    </header>
+
+    <main>
+        <form onsubmit="return false">
+            <div>
+                <label for="input">Input</label><br>
+                <input type="text" id="input">
+            </div>
+            <div>
+                <input type="submit" value="Parse" id="btn-parse">
+            </div>
+
+            <br />
+            <hr />
+        </form>
+        <table class="bordered">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="result"></tbody>
+        </table>
+        <div>
+            <small>* Decoded URL encode</small>
+        </div>
+    </main>
+
+    <script>
+        function putResult(name, value) {
+            const tr = document.createElement('tr');
+            const thName = document.createElement('th');
+            const tdValue = document.createElement('td');
+
+            thName.textContent = name;
+            thName.scope = 'row';
+            thName.classList.add('head-mono');
+            tdValue.textContent = value;
+            tdValue.classList.add('mono');
+
+            tr.appendChild(thName);
+            tr.appendChild(tdValue);
+
+            document.getElementById('result').appendChild(tr);
+        }
+
+        document.getElementById('btn-parse').addEventListener('click', () => {
+            const input = document.getElementById('input').value;
+            const resultTbody = document.getElementById('result');
+            resultTbody.innerHTML = '';
+
+            let url;
+            try {
+                url = new URL(input);
+            } catch (e) {
+                alert('Invalid URL');
+                return;
+            }
+
+            putResult('href (Full URL)', url.href);
+            const hrefDecoded = decodeURIComponent(url.href);
+            if (hrefDecoded !== url.href)
+                putResult('*href', decodeURIComponent(url.href));
+            putResult('protocol', url.protocol);
+            putResult('username', url.username);
+            const usernameDecoded = decodeURIComponent(url.username);
+            if (usernameDecoded !== url.username)
+                putResult('*username', decodeURIComponent(url.username));
+            putResult('password', url.password);
+            const passwordDecoded = decodeURIComponent(url.password);
+            if (passwordDecoded !== url.password)
+                putResult('*password', decodeURIComponent(url.password));
+            putResult('host (hostname+port)', url.host);
+            putResult('hostname', url.hostname);
+            putResult('port', url.port);
+            putResult('pathname', url.pathname);
+            const pathnameDecoded = decodeURIComponent(url.pathname);
+            if (pathnameDecoded !== url.pathname)
+                putResult('*pathname', decodeURIComponent(url.pathname));
+            putResult('search', url.search);
+            url.searchParams?.forEach((value, key) => {
+                putResult(`searchParams.${key}`, value);
+                const decoded = decodeURIComponent(value);
+                if (decoded !== value)
+                    putResult(`*searchParams.${key}`, decodeURIComponent(value));
+            });
+            putResult('hash', url.hash);
+            const hashDecoded = decodeURIComponent(url.hash);
+            if (hashDecoded !== url.hash)
+                putResult('*hash', decodeURIComponent(url.hash));
+        });
+    </script>
+</body>
+
+</html>
