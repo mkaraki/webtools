@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unix Time Convert</title>
+    <style>
+        input[type=text] {
+            width: calc(100% - 20px);
+        }
+        .text-red {
+            color: red;
+        }
+    </style>
+</head>
+
+<body id="body">
+    <header>
+        <h1>Unix Time Convert</h1>
+        <div id="current-time"></div>
+        <hr />
+    </header>
+
+    <section>
+        <h2>From Unix Time</h2>
+        <form onsubmit="return false">
+            <div>
+                <label for="from-unix-time-input">Unix Time (seconds, milliseconds, nanoseconds, picoseconds)</label><br>
+                <input type="text" id="from-unix-time-input" />
+                <div class="text-red">
+                    Maximum safe Unix time is <span id="max-safe-unix-time">unknown</span>.
+                </div>
+            </div>
+            <dl>
+                <dt>Date/Time (as Seconds)</dt>
+                <dd id="from-unix-time-output-sec">-</dd>
+                <dt>Date/Time (as Milliseconds)</dt>
+                <dd id="from-unix-time-output-millisec">-</dd>
+                <dt>Date/Time (as Nanoseconds)</dt>
+                <dd id="from-unix-time-output-nanosec">-</dd>
+                <dt>Date/Time (as Picoseconds)</dt>
+                <dd id="from-unix-time-output-picosec">-</dd>
+            </dl>
+        </form>
+    </section>
+
+    <section>
+        <h2>To Unix Time</h2>
+        <form onsubmit="return false">
+            <div>
+                <label for="to-unix-time-input">Date/Time (Local)</label><br>
+                <input type="datetime-local" id="to-unix-time-input" step="1" />
+                <button type="button" id="to-unix-time-now">Now</button>
+            </div>
+            <div>
+                <label for="to-unix-time-tz-override-h">Timezone Override (default to local timezone)</label><br>
+                <input type="number" min="-12" max="12" id="to-unix-time-tz-override-h" />
+                :
+                <input type="number" min="0" max="59" id="to-unix-time-tz-override-m" />
+            </div>
+            <div>
+                <button type="submit" id="to-unix-time-submit">Calc</button>
+            </div>
+            <dl>
+                <dt>Unix Time (as Seconds)</dt>
+                <dd id="to-unix-time-output-sec">-</dd>
+                <dt>Unix Time (as Milliseconds)</dt>
+                <dd id="to-unix-time-output-millisec">-</dd>
+                <dt>Unix Time (as Nanoseconds)</dt>
+                <dd id="to-unix-time-output-nanosec">-</dd>
+                <dt>Unix Time (as Picoseconds)</dt>
+                <dd id="to-unix-time-output-picosec">-</dd>
+            </dl>
+        </form>
+    </section>
+
+    <script>
+        document.getElementById('max-safe-unix-time').textContent = Math.floor(Number.MAX_SAFE_INTEGER / 1000).toString();
+
+        const fromUnixTimeInput = document.getElementById('from-unix-time-input');
+        const fromUnixTimeOutputSec = document.getElementById('from-unix-time-output-sec');
+        const fromUnixTimeOutputMillisec = document.getElementById('from-unix-time-output-millisec');
+        const fromUnixTimeOutputNanosec = document.getElementById('from-unix-time-output-nanosec');
+        const fromUnixTimeOutputPicosec = document.getElementById('from-unix-time-output-picosec');
+
+        const toUnixTimeInput = document.getElementById('to-unix-time-input');
+        const toUnixTimeTzOverrideH = document.getElementById('to-unix-time-tz-override-h');
+        const toUnixTimeTzOverrideM = document.getElementById('to-unix-time-tz-override-m');
+        const toUnixTimeOutputSec = document.getElementById('to-unix-time-output-sec');
+        const toUnixTimeOutputMillisec = document.getElementById('to-unix-time-output-millisec');
+        const toUnixTimeOutputNanosec = document.getElementById('to-unix-time-output-nanosec');
+        const toUnixTimeOutputPicosec = document.getElementById('to-unix-time-output-picosec');
+        const toUnixTimeSubmit = document.getElementById('to-unix-time-submit');
+
+        const tzOffsetMinutes = new Date().getTimezoneOffset();
+
+        (()=>{
+            const offsetMinutes = tzOffsetMinutes;
+            const sign = offsetMinutes <= 0 ? '+' : '-';
+            const absOffset = Math.abs(offsetMinutes);
+            const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+            const minutes = String(absOffset % 60).padStart(2, '0');
+            toUnixTimeTzOverrideH.value = Number(`${sign}${hours}`);
+            toUnixTimeTzOverrideM.value = minutes;
+        })();
+
+        function formatTimezoneOffset(offsetMinutes) {
+            const sign = offsetMinutes <= 0 ? '+' : '-';
+            const absOffset = Math.abs(offsetMinutes);
+            const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+            const minutes = String(absOffset % 60).padStart(2, '0');
+            return `${sign}${hours}:${minutes}`;
+        }
+
+        function getDateString(date) {
+            return `${date.toISOString()} (${date.toLocaleDateString()} ${date.toLocaleTimeString()} ${formatTimezoneOffset(date.getTimezoneOffset())})`;
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('current-time').textContent = `Current Time: ${getDateString(now)} +- 500ms`;
+        }, 500);
+
+        fromUnixTimeInput.addEventListener('input', () => {
+            const unixTimeStr = fromUnixTimeInput.value.trim();
+            if (!/^\d+$/.test(unixTimeStr)) {
+                fromUnixTimeOutputSec.textContent = '-';
+                fromUnixTimeOutputMillisec.textContent = '-';
+                fromUnixTimeOutputNanosec.textContent = '-';
+                fromUnixTimeOutputPicosec.textContent = '-';
+                return;
+            }
+
+            const unixTimeNum = BigInt(unixTimeStr);
+            let date;
+
+            // Seconds
+            try {
+                date = new Date(Number(unixTimeNum) * 1000);
+                fromUnixTimeOutputSec.textContent = getDateString(date);
+            } catch {
+                fromUnixTimeOutputSec.textContent = 'ERR';
+            }
+
+            // Milliseconds
+            try {
+                date = new Date(Number(unixTimeNum));
+                fromUnixTimeOutputMillisec.textContent = getDateString(date);
+            } catch {
+                fromUnixTimeOutputMillisec.textContent = 'ERR';
+            }
+
+            // Nanoseconds
+            try {
+                date = new Date(Number(unixTimeNum / 1_000n));
+                fromUnixTimeOutputNanosec.textContent = getDateString(date);
+            } catch {
+                fromUnixTimeOutputNanosec.textContent = 'ERR';
+            }
+
+            // Picoseconds
+            try {
+                date = new Date(Number(unixTimeNum / 1_000_000n));
+                fromUnixTimeOutputPicosec.textContent = getDateString(date);
+            } catch {
+                fromUnixTimeOutputPicosec.textContent = 'ERR';
+            }
+        });
+
+        toUnixTimeSubmit.addEventListener('click', () => {
+            const dateStr = toUnixTimeInput.value;
+            if (!dateStr) {
+                toUnixTimeOutputSec.textContent = '-';
+                toUnixTimeOutputMillisec.textContent = '-';
+                toUnixTimeOutputNanosec.textContent = '-';
+                toUnixTimeOutputPicosec.textContent = '-';
+                return;
+            }
+
+            const tzOverrideH = parseInt(toUnixTimeTzOverrideH.value) || 0;
+            const tzOverrideM = parseInt(toUnixTimeTzOverrideM.value) || 0;
+            const tzOverrideOffsetMinutes = tzOverrideH * 60 + (tzOverrideH >= 0 ? tzOverrideM : -tzOverrideM);
+
+            const totalTimeOffsetMillisec = (tzOverrideOffsetMinutes + /* System's offset is negative */ tzOffsetMinutes) * 60 * 1000;
+
+            const date = new Date(dateStr);
+            const utcAsLocalTimeDate = new Date(date.getTime() + totalTimeOffsetMillisec);
+
+            // Only consider per 1 seconds accuracy.
+
+            const unixTimeMillisec = utcAsLocalTimeDate.getTime();
+            const unixTimeMillisecStr = unixTimeMillisec.toString();
+
+            const unixTimeSec = unixTimeMillisecStr.substring(0, unixTimeMillisecStr.length - 3);
+            const unixTimeNanosec = unixTimeMillisecStr + '000';
+            const unixTimePicosec = unixTimeMillisecStr + '000000';
+
+            toUnixTimeOutputSec.textContent = unixTimeSec.toString();
+            toUnixTimeOutputMillisec.textContent = unixTimeMillisecStr;
+            toUnixTimeOutputNanosec.textContent = unixTimeNanosec.toString();
+            toUnixTimeOutputPicosec.textContent = unixTimePicosec.toString();
+        });
+
+        document.getElementById('to-unix-time-now').addEventListener('click', () => {
+            const now = new Date();
+            const localIsoString = new Date(now.getTime() - tzOffsetMinutes * 60 * 1000).toISOString().slice(0, 19);
+            toUnixTimeInput.value = localIsoString;
+            toUnixTimeSubmit.click();
+        });
+    </script>
+</body>
+
+</html>

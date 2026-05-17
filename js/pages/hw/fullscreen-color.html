@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fullscreen color test</title>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #color-panel {
+            position: fixed;
+            z-index: -5;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+        }
+    </style>
+</head>
+
+<body id="body">
+
+<div id="color-panel"></div>
+
+<div id="menu">
+    <div>
+        <button id="btn-white">White</button>
+        <button id="btn-black">Black</button>
+        <button id="btn-red">Red</button>
+        <button id="btn-green">Green</button>
+        <button id="btn-blue">Blue</button>
+    </div>
+    <div>
+        <button id="btn-fullscreen">Fullscreen</button>
+        <button id="btn-hide">Hide This (Type any key to revert)</button>
+    </div>
+</div>
+
+<script>
+    const body = document.getElementById('body');
+    const colorPanel = document.getElementById('color-panel');
+
+    function setColor(color) {
+        body.style.backgroundColor = color;
+        colorPanel.style.backgroundColor = color;
+    }
+
+    document.querySelector('#btn-white').addEventListener('click', () => {
+        setColor('white');
+    });
+
+    document.querySelector('#btn-black').addEventListener('click', () => {
+        setColor('black');
+    });
+
+    document.querySelector('#btn-red').addEventListener('click', () => {
+        setColor('#ff0000');
+    });
+
+    document.querySelector('#btn-green').addEventListener('click', () => {
+        setColor('#00ff00');
+    });
+
+    document.querySelector('#btn-blue').addEventListener('click', () => {
+        setColor('#0000ff');
+    });
+
+    document.querySelector('#btn-fullscreen').addEventListener('click', () => {
+        if (body.requestFullscreen) {
+            body.requestFullscreen();
+        } else {
+            alert('Fullscreen API is not supported in this browser.');
+        }
+    });
+
+    let isMenuHidden = false;
+
+    document.querySelector('#btn-hide').addEventListener('click', (e) => {
+        document.getElementById('menu').style.display = 'none';
+        body.style.cursor = 'none';
+        isMenuHidden = true;
+        e.preventDefault();
+    });
+
+    body.addEventListener('keydown', (event) => {
+        if (isMenuHidden) {
+            document.getElementById('menu').style.display = 'block';
+            body.style.cursor = 'default';
+        }
+
+        isMenuHidden = false;
+    });
+</script>
+
+</body>
+</html>
