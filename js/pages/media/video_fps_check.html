@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video FPS Check</title>
+    <style>
+        video, canvas {
+            max-height: 33vh;
+            max-width: 100vw;
+        }
+        .hidden {
+            display: none;
+        }
+        .hash-link {
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Video FPS Check</h1>
+        <hr />
+    </header>
+
+    <main>
+        <section>
+            <h2>Video</h2>
+            <video id="video" controls muted></video>
+            <div>
+                <div>
+                    <label for="file-input">Select a video file:</label>
+                    <input type="file" id="file-input" accept="video/*">
+                    <button id="btn-load">Load</button>
+                    <button id="btn-analyze" disabled>Analyze</button>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <label for="analyze-step">Evaluate every:</label>
+                    <input type="number" id="analyze-step" value="0.005" step="0.0001">
+                    (seconds)
+                </div>
+                <div>
+                    <label for="analyze-wait">Wait after seek:</label>
+                    <input type="number" id="analyze-wait" value="10" step="1">
+                    (milliseconds)
+                </div>
+            </div>
+        </section>
+        <section>
+            <h2>Video Playback Info</h2>
+            <dl>
+                <dt>Current Time</dt>
+                <dd id="current-time">0.00</dd>
+            </dl>
+        </section>
+        <section>
+            <h2>Detected Frames</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Time difference</th>
+                        <th>as FPS</th>
+                        <th>Frame Image Hash</th>
+                    </tr>
+                </thead>
+                <tbody id="frame-table-body">
+                </tbody>
+            </table>
+            <section class="hidden">
+                <h3>Current Frame</h3>
+                <canvas id="current-frame-canvas"></canvas>
+            </section>
+        </section>
+    </main>
+
+    <script type="module">
+        const { calculateSHA512HashFromArrayBuffer } = await import('/dist/utils/hash/hash.js');
+
+        const video = document.getElementById('video');
+        const btnLoad = document.getElementById('btn-load');
+        const btnAnalyze = document.getElementById('btn-analyze');
+        const fileInput = document.getElementById('file-input');
+
+        const analyzeStepInput = document.getElementById('analyze-step');
+        const analyzeWaitInput = document.getElementById('analyze-wait');
+
+        const currentTimeElem = document.getElementById('current-time');
+
+        const frameTableBody = document.getElementById('frame-table-body');
+
+        const currentFrameCanvas = document.getElementById('current-frame-canvas');
+        const currentFrameCtx = currentFrameCanvas.getContext('2d');
+
+        btnLoad.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            btnAnalyze.disabled = true;
+
+            const file = e.target.files[0];
+            if (!file) {
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                video.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        video.addEventListener('canplay', () => {
+            btnAnalyze.disabled = false;
+
+            currentFrameCanvas.width = video.videoWidth;
+            currentFrameCanvas.height = video.videoHeight;
+        });
+
+        let onAnalyzeMode = false;
+        let lastFrameTime = 0;
+        let lastMovedTime = 0;
+        let lastFrameHash = null;
+
+        const guessFrameSyncly = async () => {
+            const analyzeStep = parseFloat(analyzeStepInput.value) || 0.005;
+            const analyzeWait = parseInt(analyzeWaitInput.value) || 10;
+
+            while (video.currentTime < video.duration) {
+                video.currentTime += analyzeStep;
+
+                await new Promise(resolve => setTimeout(resolve, analyzeWait));
+                if (!onAnalyzeMode) break;
+                const diff = await perFrame();
+
+                console.log(`Seeking to ${video.currentTime.toFixed(6)}s (diff: ${(diff ?? NaN).toFixed(6)})`);
+            }
+        }
+
+        btnAnalyze.addEventListener('click', async () => {
+            onAnalyzeMode = !onAnalyzeMode;
+            if (!onAnalyzeMode) {
+                video.controls = true;
+                alert('Stopped');
+                return;
+            }
+
+            frameTableBody.innerHTML = '';
+
+            video.pause();
+            video.controls = false;
+
+            setTimeout(guessFrameSyncly, 0);
+        });
+
+        const getFrameDifference = (imageData, lastFrameImage) => {
+            const lastFrameImageData = lastFrameImage.data;
+            const diff = imageData.data.filter((x, i) => x > 10 && lastFrameImageData[i] > 10);
+            return diff.length / imageData.data.length;
+        };
+
+        const perFrame = async () => {
+            const currentTime = video.currentTime;
+            currentTimeElem.innerText = `${currentTime.toFixed(6)}`;
+
+            if (!onAnalyzeMode) return;
+
+            const delta = currentTime - lastMovedTime;
+
+            const ctx = currentFrameCtx;
+            ctx.drawImage(video, 0, 0, currentFrameCanvas.width, currentFrameCanvas.height);
+            const imageData = ctx.getImageData(0, 0, currentFrameCanvas.width, currentFrameCanvas.height);
+            const currentImageData = imageData.data;
+
+            const currentHash = await calculateSHA512HashFromArrayBuffer(currentImageData.buffer);
+
+            //alert(`Current frame hash: ${currentHash}`);
+
+            let hasDiff = false;
+
+            if (lastFrameHash !== null) {
+                hasDiff = lastFrameHash !== currentHash;
+
+                if (hasDiff) {
+                    const fps = (1 / delta).toFixed(6);
+
+                    const tr = document.createElement('tr');
+
+                    const currentTimeTd = document.createElement('td');
+                    currentTimeTd.innerText = currentTime.toFixed(6);
+                    tr.appendChild(currentTimeTd);
+
+                    const deltaTd = document.createElement('td');
+                    deltaTd.innerText = delta.toFixed(6);
+                    tr.appendChild(deltaTd);
+
+                    const fpsTd = document.createElement('td');
+                    fpsTd.innerText = fps;
+                    tr.appendChild(fpsTd);
+
+                    const hashTd = document.createElement('td');
+                    const hashTdATag = document.createElement('a');
+                    hashTdATag.innerText = currentHash;
+                    hashTdATag.href = 'javascript:void(0)';
+                    hashTdATag.classList.add('hash-link');
+                    const canvasImageURL = currentFrameCanvas.toDataURL();
+                    hashTdATag.onclick = () => {
+                        // Open imageData in new dialog window
+                        console.log(`Opening frame at ${currentTime.toFixed(6)}s in new window...`);
+                        console.log(`Image data URL: ${canvasImageURL}`);
+
+                        // Open a new window as dialog and display the image
+                        const imgWindow = window.open('', '_blank', 'width=800,height=600');
+
+                        imgWindow.document.write(`<title>Frame at ${currentTime.toFixed(6)}s</title>`);
+                        imgWindow.document.write(`<style>img { max-width: calc(100vw - 20px); max-height: calc(100vh - 20px); }</style>`);
+                        imgWindow.document.write(`<img src="${canvasImageURL}" alt="Frame at ${currentTime.toFixed(6)}s">`);
+
+                        imgWindow.focus();
+                    };
+                    hashTd.appendChild(hashTdATag);
+                    tr.appendChild(hashTd);
+
+                    frameTableBody.appendChild(tr);
+
+                    lastMovedTime = currentTime;
+                }
+            }
+
+            lastFrameHash = currentHash;
+            lastFrameTime = currentTime;
+
+            return hasDiff ? 1.0 : 0;
+        };
+
+        //setInterval(perFrame, 10);
+        //video.addEventListener('timeupdate', perFrame);
+    </script>
+</body>
+
+</html>
