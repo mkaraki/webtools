@@ -48,6 +48,20 @@
                     <input type="number" id="analyze-wait" value="10" step="1">
                     (milliseconds)
                 </div>
+                <div>
+                    <label for="detection-method">Detection Method</label>
+                    <select id="detection-method">
+                        <option value="hash">Hash Comparison (Accurate)</option>
+                        <option value="pixel">Pixel Comparison</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="changes-pixel-value-diff">Changed Pixel Value Amount</label>
+                    <input type="number" id="changes-pixel-value-diff" value="30" min="1" max="254">
+
+                    <label for="changes-pixel-amount">Changed Pixel Amount</label>
+                    <input type="number" id="changes-pixel-amount" value="300">
+                </div>
             </div>
         </section>
         <section>
@@ -55,6 +69,8 @@
             <dl>
                 <dt>Current Time</dt>
                 <dd id="current-time">0.00</dd>
+                <dt>Detected Frames</dt>
+                <dd id="detected-frames">0</dd>
             </dl>
         </section>
         <section>
@@ -88,8 +104,12 @@
 
         const analyzeStepInput = document.getElementById('analyze-step');
         const analyzeWaitInput = document.getElementById('analyze-wait');
+        const detectionMethodSelect = document.getElementById('detection-method');
+        const changesPixelValueDiffInput = document.getElementById('changes-pixel-value-diff');
+        const changesPixelAmountInput = document.getElementById('changes-pixel-amount');
 
         const currentTimeElem = document.getElementById('current-time');
+        const detectedFramesElem = document.getElementById('detected-frames');
 
         const frameTableBody = document.getElementById('frame-table-body');
 
@@ -125,21 +145,55 @@
         let lastFrameTime = 0;
         let lastMovedTime = 0;
         let lastFrameHash = null;
+        let lastFrameImage = null;
+
+        let isLoadBlocking = false;
+
+        let detectedFrames = 0;
 
         const guessFrameSyncly = async () => {
             const analyzeStep = parseFloat(analyzeStepInput.value) || 0.005;
             const analyzeWait = parseInt(analyzeWaitInput.value) || 10;
 
-            while (video.currentTime < video.duration) {
+            while (video.currentTime < video.duration || !video.ended) {
+                if (!onAnalyzeMode) {
+                    return;
+                }
+
+                isLoadBlocking = true;
                 video.currentTime += analyzeStep;
+                console.log(`Seeking to ${video.currentTime.toFixed(6)}s`);
 
-                await new Promise(resolve => setTimeout(resolve, analyzeWait));
-                if (!onAnalyzeMode) break;
-                const diff = await perFrame();
-
-                console.log(`Seeking to ${video.currentTime.toFixed(6)}s (diff: ${(diff ?? NaN).toFixed(6)})`);
+                do {
+                    await new Promise(resolve => setTimeout(resolve, analyzeWait));
+                } while(isLoadBlocking);
             }
         }
+
+        video.addEventListener('seeked', async () => {
+            if (isLoadBlocking) {
+                if (!onAnalyzeMode) {
+                    isLoadBlocking = false;
+                    return;
+                }
+
+                const detectionMethod = detectionMethodSelect.value;
+
+                let diff;
+                switch (detectionMethod) {
+                    case 'pixel':
+                        diff = await perFrameDiff();
+                        break;
+                    case 'hash':
+                    default:
+                        diff = await perFrameHash();
+                        break;
+                }
+                console.log(`Seeked/Analyzed to ${video.currentTime.toFixed(6)}s (diff: ${diff.toFixed(6)})`);
+
+                isLoadBlocking = false;
+            }
+        });
 
         btnAnalyze.addEventListener('click', async () => {
             onAnalyzeMode = !onAnalyzeMode;
@@ -157,13 +211,7 @@
             setTimeout(guessFrameSyncly, 0);
         });
 
-        const getFrameDifference = (imageData, lastFrameImage) => {
-            const lastFrameImageData = lastFrameImage.data;
-            const diff = imageData.data.filter((x, i) => x > 10 && lastFrameImageData[i] > 10);
-            return diff.length / imageData.data.length;
-        };
-
-        const perFrame = async () => {
+        const perFrameHash = async () => {
             const currentTime = video.currentTime;
             currentTimeElem.innerText = `${currentTime.toFixed(6)}`;
 
@@ -227,6 +275,8 @@
 
                     frameTableBody.appendChild(tr);
 
+                    detectedFramesElem.innerText = (++detectedFrames).toString();
+
                     lastMovedTime = currentTime;
                 }
             }
@@ -235,6 +285,106 @@
             lastFrameTime = currentTime;
 
             return hasDiff ? 1.0 : 0;
+        };
+
+        const perFrameDiff = async () => {
+            const currentTime = video.currentTime;
+            currentTimeElem.innerText = `${currentTime.toFixed(6)}`;
+
+            if (!onAnalyzeMode) return;
+
+            const delta = currentTime - lastMovedTime;
+
+            const ctx = currentFrameCtx;
+            ctx.drawImage(video, 0, 0, currentFrameCanvas.width, currentFrameCanvas.height);
+            const imageData = ctx.getImageData(0, 0, currentFrameCanvas.width, currentFrameCanvas.height);
+            const currentImageData = imageData.data;
+
+            // For result table.
+            const currentHash = await calculateSHA512HashFromArrayBuffer(currentImageData.buffer);
+
+            if (lastFrameImage !== null) {
+                const changesPixelValueDiff = parseInt(changesPixelValueDiffInput.value);
+                const changesPixelAmount = parseInt(changesPixelAmountInput.value);
+
+                let changedPixelAmount = 0;
+                for (let i = 0; i < currentImageData.length; i += 4) {
+                    const r = currentImageData[i];
+                    const g = currentImageData[i + 1];
+                    const b = currentImageData[i + 2];
+                    const a = currentImageData[i + 3];
+
+                    const diff_r = Math.abs(r - lastFrameImage[i]);
+                    const diff_g = Math.abs(g - lastFrameImage[i + 1]);
+                    const diff_b = Math.abs(b - lastFrameImage[i + 2]);
+                    const diff_a = Math.abs(a - lastFrameImage[i + 3]);
+
+                    const max_diff = Math.max(diff_r, diff_g, diff_b, diff_a);
+
+                    if (max_diff >= changesPixelValueDiff) {
+                        changedPixelAmount++;
+                    }
+                }
+
+                const hasDiff = changedPixelAmount >= changesPixelAmount;
+
+                if (hasDiff) {
+                    const fps = (1 / delta).toFixed(6);
+
+                    const tr = document.createElement('tr');
+
+                    const currentTimeTd = document.createElement('td');
+                    currentTimeTd.innerText = `${currentTime.toFixed(6)}`;
+                    tr.appendChild(currentTimeTd);
+
+                    const deltaTd = document.createElement('td');
+                    deltaTd.innerText = `${delta.toFixed(6)}`;
+                    tr.appendChild(deltaTd);
+
+                    const fpsTd = document.createElement('td');
+                    fpsTd.innerText = fps;
+                    tr.appendChild(fpsTd);
+
+                    const hashTd = document.createElement('td');
+                    const hashTdATag = document.createElement('a');
+                    hashTdATag.innerText = currentHash;
+                    hashTdATag.href = 'javascript:void(0)';
+                    hashTdATag.classList.add('hash-link');
+                    const canvasImageURL = currentFrameCanvas.toDataURL();
+                    hashTdATag.onclick = () => {
+                        // Open imageData in new dialog window
+                        console.log(`Opening frame at ${currentTime.toFixed(6)}s in new window...`);
+                        console.log(`Image data URL: ${canvasImageURL}`);
+
+                        // Open a new window as dialog and display the image
+                        const imgWindow = window.open('', '_blank', 'width=800,height=600');
+
+                        imgWindow.document.write(`<title>Frame at ${currentTime.toFixed(6)}s</title>`);
+                        imgWindow.document.write(`<style>img { max-width: calc(100vw - 20px); max-height: calc(100vh - 20px); }</style>`);
+                        imgWindow.document.write(`<img src="${canvasImageURL}" alt="Frame at ${currentTime.toFixed(6)}s">`);
+
+                        imgWindow.focus();
+                    };
+                    hashTd.appendChild(hashTdATag);
+                    tr.appendChild(hashTd);
+
+                    frameTableBody.appendChild(tr);
+
+                    detectedFramesElem.innerText = (++detectedFrames).toString();
+
+                    lastMovedTime = currentTime;
+                }
+
+                lastFrameImage = currentImageData;
+                lastFrameTime = currentTime;
+
+                return changedPixelAmount;
+            }
+
+            lastFrameImage = currentImageData;
+            lastFrameTime = currentTime;
+
+            return 0;
         };
 
         //setInterval(perFrame, 10);
