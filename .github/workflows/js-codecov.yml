@@ -1,0 +1,50 @@
+name: JS Code Coverage
+
+on:
+  push:
+    paths:
+      - 'js/**'
+  pull_request:
+    branches:
+      - master
+    paths:
+        - 'js/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: js/package.json
+          cache: true
+          cache_dependency_path: |
+            js/pnpm-lock.yaml
+          run_install: |
+            - cwd: js
+
+      - name: Build
+        run: pnpm build
+        working-directory: js
+
+      - name: Test
+        run: pnpm test:ci
+        working-directory: js
+
+      - name: upload coverage to codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: js/coverage/*.json
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: upload test report to codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: js/test-report.junit.xml
+          report_type: test_results
+          token: ${{ secrets.CODECOV_TOKEN }}

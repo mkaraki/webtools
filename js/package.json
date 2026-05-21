@@ -6,14 +6,18 @@
     "watch:ts": "tsc -w",
     "watch:css": "sass --watch src:dist",
     "server": "live-server .",
-    "build": "tsc && sass src:dist"
+    "build": "tsc && sass src:dist",
+    "test": "pnpm build && vitest run",
+    "test:ci": "pnpm build && vitest run --coverage --reporter=junit --outputFile=test-report.junit.xml"
   },
   "packageManager": "pnpm@11.0.9",
   "type": "module",
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7",
     "live-server": "^1.2.2",
     "npm-run-all": "^4.1.5",
     "sass": "^1.99.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }
