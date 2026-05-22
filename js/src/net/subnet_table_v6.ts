@@ -25,11 +25,22 @@ const addSpanWithOctetFormat = (parent: HTMLElement, octets: IPv6NumberedOctet) 
 document.getElementById('btn-calculate')?.addEventListener('click', () => {
     const ipAddress = (document.getElementById('ip') as HTMLInputElement).value;
 
-    const pureIp = ipAddress.trim().split('/')[0] ?? '';
+    const separated = ipAddress.trim().split('/');
+    const pureIp = (separated[0] ?? '').trim();
+
     if (!isIPv6Address(pureIp)) {
         console.error('Invalid IP address: False isIPv6Address');
         alert('Invalid IP address');
         return
+    }
+
+    let hasCidr = separated.length > 1 && separated[1] != null && /^\d+$/.test(separated[1].trim());
+    let cidr = 0;
+    if (hasCidr) {
+        cidr = Number.parseInt((separated[1] ?? '').trim());
+        if (cidr < 0 || cidr > 128) {
+            hasCidr = false;
+        }
     }
 
     const expandedIp = convertToIPv6AddressWithoutEmpty(pureIp);
@@ -70,6 +81,7 @@ document.getElementById('btn-calculate')?.addEventListener('click', () => {
             tdCidr.classList.add('all-zero');
         else if (cidr % 8 === 0)
             tdCidr.classList.add('ip-connected');
+        tdCidr.id = `cidr-${cidr}`;
 
 
         const tdNetworkRange = document.createElement('td');
@@ -86,5 +98,9 @@ document.getElementById('btn-calculate')?.addEventListener('click', () => {
         tr.appendChild(tdNetmask);
 
         subnetTable.appendChild(tr);
+    }
+
+    if (hasCidr) {
+        document.getElementById(`cidr-${cidr}`)?.scrollIntoView({ behavior: 'smooth' });
     }
 });
