@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPI/DPI and Pixel Convert</title>
+</head>
+<body>
+    <header>
+        <h1>PPI/DPI and Pixel Convert</h1>
+    </header>
+    <section>
+        <h2>PPI + Inch to Pixels (Also convert cm/mm to Inch)</h2>
+        <form onsubmit="return false">
+            <div>
+                <label for="ppi-px--ppi">PPI:</label>
+                <input type="number" id="ppi-px--ppi" required value="300">
+                Use 300 if you just want to convert cm/mm to inches.
+            </div>
+            <div>
+                <label for="ppi-px-width">Width:</label>
+                <input type="number" id="ppi-px-width" required value="100" step="0.01">
+            </div>
+            <div>
+                <label for="ppi-px-height">Height:</label>
+                <input type="number" id="ppi-px-height" required value="100" step="0.01">
+            </div>
+            <div>
+                <label for="ppi-px--size-unit">Unit:</label>
+                <select id="ppi-px--size-unit">
+                    <option value="mm">Millimeter</option>
+                    <option value="cm">Centimeter</option>
+                    <option value="inch">Inch</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit" id="ppi-px--submit">Convert</button>
+            </div>
+            <pre><code id="ppi-px--result"></code></pre>
+        </form>
+    </section>
+    <section>
+        <h2>Pixels + PPI to Inch</h2>
+        <form onsubmit="return false">
+            <div>
+                <label for="px-ppi-inch--ppi">PPI:</label>
+                <input id="px-ppi-inch--ppi" type="number" required value="300">
+            </div>
+            <div>
+                <label for="px-ppi-inch--width">Width (px):</label>
+                <input id="px-ppi-inch--width" type="number" required value="100">
+            </div>
+            <div>
+                <label for="px-ppi-inch--height">Height (px):</label>
+                <input id="px-ppi-inch--height" type="number" required value="100">
+            </div>
+            <div>
+                <button type="submit" id="px-ppi-inch--submit">Convert</button>
+            </div>
+            <pre><code id="px-ppi-inch--result"></code></pre>
+        </form>
+    </section>
+    <section>
+        <h2>Pixels + Inch to PPI</h2>
+        <form onsubmit="return false">
+            <div>
+                <label for="px-inch-ppi--width-px">Width (px):</label>
+                <input id="px-inch-ppi--width-px" type="number" required value="100">
+            </div>
+            <div>
+                <label for="px-inch-ppi--height-px">Height (px):</label>
+                <input id="px-inch-ppi--height-px" type="number" required value="100">
+            </div>
+            <div>
+                <label for="px-inch-ppi--width-real">Width (Real):</label>
+                <input id="px-inch-ppi--width-real" type="number" required value="100" step="0.01">
+            </div>
+            <div>
+                <label for="px-inch-ppi--height-real">Height (Real):</label>
+                <input id="px-inch-ppi--height-real" type="number" required value="100" step="0.01">
+            </div>
+            <div>
+                <label for="px-inch-ppi--size-unit">Size Unit:</label>
+                <select id="px-inch-ppi--size-unit">
+                    <option value="mm">Millimeter</option>
+                    <option value="cm">Centimeter</option>
+                    <option value="inch">Inch</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit" id="px-inch-ppi--submit">Convert</button>
+            </div>
+            <pre><code id="px-inch-ppi--result"></code></pre>
+        </form>
+    </section>
+    <script type="module">
+        import {sizeConvertToInch, sizeConvertFromInchToMillimeter} from '/dist/utils/unit/size.js';
+
+        window.sizeConvertToInch = sizeConvertToInch;
+        window.sizeConvertFromInchToMillimeter = sizeConvertFromInchToMillimeter;
+    </script>
+    <script>
+        (() => {
+            const ppiElem = document.getElementById("ppi-px--ppi");
+            const widthElem = document.getElementById("ppi-px-width");
+            const heightElem = document.getElementById("ppi-px-height");
+            const sizeUnitElem = document.getElementById("ppi-px--size-unit");
+
+            const submitElem = document.getElementById("ppi-px--submit");
+
+            const resultElem = document.getElementById("ppi-px--result");
+
+            submitElem.addEventListener("click", () => {
+                const ppi = parseFloat(ppiElem.value);
+                const width = parseFloat(widthElem.value);
+                const height = parseFloat(heightElem.value);
+                const sizeUnit = sizeUnitElem.value;
+
+                const widthInch = sizeConvertToInch(sizeUnit, width);
+                const heightInch = sizeConvertToInch(sizeUnit, height);
+
+                const widthPx = widthInch * ppi;
+                const heightPx = heightInch * ppi;
+
+                resultElem.innerText = `Width: ${widthPx} px\nHeight: ${heightPx} px\n\nWidth Inch: ${widthInch} in\nHeight Inch: ${heightInch} in`;
+            });
+        })();
+
+        (() => {
+            const ppiElem = document.getElementById("px-ppi-inch--ppi");
+            const widthElem = document.getElementById("px-ppi-inch--width");
+            const heightElem = document.getElementById("px-ppi-inch--height");
+            const submitElem = document.getElementById("px-ppi-inch--submit");
+
+            const resultElem = document.getElementById("px-ppi-inch--result");
+
+            submitElem.addEventListener("click", () => {
+                const ppi = parseFloat(ppiElem.value);
+                const width = parseFloat(widthElem.value);
+                const height = parseFloat(heightElem.value);
+
+                const widthInch = width / ppi;
+                const heightInch = height / ppi;
+
+                const widthMillimeter = sizeConvertFromInchToMillimeter(widthInch);
+                const heightMillimeter = sizeConvertFromInchToMillimeter(heightInch);
+
+                resultElem.innerText = `Width: ${widthInch} in (${widthMillimeter} mm)\nHeight: ${heightInch} in (${heightMillimeter} mm)`;
+            });
+        })();
+
+        (() => {
+            const widthPxElem = document.getElementById("px-inch-ppi--width-px");
+            const heightPxElem = document.getElementById("px-inch-ppi--height-px");
+            const widthRealElem = document.getElementById("px-inch-ppi--width-real");
+            const heightRealElem = document.getElementById("px-inch-ppi--height-real");
+
+            const sizeUnitElem = document.getElementById("px-inch-ppi--size-unit");
+
+            const submitElem = document.getElementById("px-inch-ppi--submit");
+
+            const resultElem = document.getElementById("px-inch-ppi--result");
+
+            submitElem.addEventListener('click', () => {
+                const widthPx = parseFloat(widthPxElem.value);
+                const heightPx = parseFloat(heightPxElem.value);
+                const widthReal = parseFloat(widthRealElem.value);
+                const heightReal = parseFloat(heightRealElem.value);
+
+                const sizeUnit = sizeUnitElem.value;
+
+                const widthRealInch = sizeConvertToInch(sizeUnit, widthReal);
+                const heightRealInch = sizeConvertToInch(sizeUnit, heightReal);
+
+                const widthPpi = widthPx / widthRealInch;
+                const heightPpi = heightPx / heightRealInch;
+
+                resultElem.innerText = `Width PPI: ${widthPpi}\nHeight PPI: ${heightPpi}`;
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Size Calculator</title>
+    <style>
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Monitor size calculator</h1>
+    </header>
+
+    <form onsubmit="return false">
+        <div>
+            <label for="aspect-w">Aspect</label>
+            <input type="number" id="aspect-w" required value="16" step="0.01">
+            <label for="aspect-h">:</label>
+            <input type="number" id="aspect-h" required value="9" step="0.01">
+            <button type="button" id="aspect-preview">Preview</button>
+        </div>
+        <div class="hidden" id="aspect-preview-container">
+            <canvas id="aspect-preview-canvas" width="300" height="300"></canvas>
+        </div>
+        <div>
+            <label for="mode">Mode</label>
+            <select id="mode">
+                <option value="1">Width -> Inch + Height</option>
+                <option value="2">Height -> Inch + Width</option>
+                <option value="3">Inch -> Width/Height</option>
+            </select>
+        </div>
+        <div id="widhei-sel">
+            <label for="size">Size</label>
+            <input type="number" id="size" required value="100" step="0.01">
+            <label for="unit">Unit</label>
+            <select id="unit">
+                <option value="cm">Centimeter</option>
+                <option value="mm">Millimeter</option>
+                <option value="inch">Inch</option>
+            </select>
+        </div>
+        <div id="inch-sel" class="hidden">
+            <label for="size-in">Size</label>
+            <input type="number" id="size-in" required value="100" step="0.01"> Inch
+        </div>
+        <div>
+            <button type="submit" id="calc">Calculate</button>
+        </div>
+        <pre><code id="res"></code></pre>
+    </form>
+    <script type="module">
+        import {sizeConvertToInch, sizeConvertFromInchToMillimeter} from '/dist/utils/unit/size.js';
+
+        window.sizeConvertToInch = sizeConvertToInch;
+        window.sizeConvertFromInchToMillimeter = sizeConvertFromInchToMillimeter;
+    </script>
+    <script>
+        const aspectWidthElem = document.getElementById('aspect-w');
+        const aspectHeightElem = document.getElementById('aspect-h');
+
+        const modeElem = document.getElementById('mode');
+
+        const widHeiSel = document.getElementById('widhei-sel');
+        const sizeElem = document.getElementById('size');
+        const unitElem = document.getElementById('unit');
+
+        const inchSel = document.getElementById('inch-sel');
+        const sizeInElem = document.getElementById('size-in');
+
+        const resElem = document.getElementById('res');
+
+        document.getElementById('aspect-preview').addEventListener('click', () => {
+            const aspectWidth = parseFloat(aspectWidthElem.value);
+            const aspectHeight = parseFloat(aspectHeightElem.value);
+
+            let cRectWidth = 280;
+            let cRectHeight = 280;
+
+            if (aspectWidth > aspectHeight) {
+                cRectWidth = 280;
+                cRectHeight = 280 * (aspectHeight / aspectWidth);
+            } else {
+                cRectWidth = 280 * (aspectWidth / aspectHeight);
+                cRectHeight = 280;
+            }
+
+            const aspectPreviewCanvas = document.getElementById('aspect-preview-canvas');
+
+            const ctx = aspectPreviewCanvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 300, 300);
+
+            ctx.strokeRect(10, 10, cRectWidth, cRectHeight);
+
+
+            document.getElementById('aspect-preview-container').classList.remove('hidden');
+        });
+
+        modeElem.addEventListener('change', () => {
+            if (modeElem.value === '1' || modeElem.value === '2') {
+                widHeiSel.classList.remove('hidden');
+                inchSel.classList.add('hidden');
+            } else {
+                widHeiSel.classList.add('hidden');
+                inchSel.classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('calc').addEventListener('click', () => {
+            const mode = modeElem.value;
+
+            let aspectWidth = parseFloat(aspectWidthElem.value);
+            let aspectHeight = parseFloat(aspectHeightElem.value);
+
+            switch (mode) {
+                case '1':
+                case '2': {
+                    if (mode === '2') {
+                        const tmp = aspectWidth;
+                        aspectWidth = aspectHeight;
+                        aspectHeight = tmp;
+                    }
+
+                    let aspect = aspectHeight / aspectWidth;
+                    let width = parseFloat(sizeElem.value);
+                    let heightWithOriginalUnit = width * aspect;
+                    let originalUnit = unitElem.value;
+
+                    let widthInch = sizeConvertToInch(originalUnit, width);
+                    let heightInch = sizeConvertToInch(originalUnit, heightWithOriginalUnit);
+
+                    let inch = Math.sqrt(Math.pow(widthInch, 2) + Math.pow(heightInch, 2));
+
+                    if (mode === '2') {
+                        const tmp1 = width;
+                        const tmp2 = widthInch;
+                        width = heightWithOriginalUnit;
+                        widthInch = heightInch;
+                        heightWithOriginalUnit = tmp1;
+                        heightInch = tmp2;
+                    }
+
+                    resElem.innerText = `Width: ${width} ${unitElem.value} (${widthInch} in)\nHeight: ${heightWithOriginalUnit} ${unitElem.value} (${heightInch} in)\nInch: ${inch}`;
+
+                    break;
+                }
+
+                case '3': {
+                    const inch = parseFloat(sizeInElem.value);
+                    const aspectRatioInch = Math.sqrt(Math.pow(aspectWidth, 2) + Math.pow(aspectHeight, 2));
+                    const widthInch = inch / aspectRatioInch * aspectWidth;
+                    const heightInch = inch / aspectRatioInch * aspectHeight;
+
+                    const widthMillimeter = sizeConvertFromInchToMillimeter(widthInch);
+                    const heightMillimeter = sizeConvertFromInchToMillimeter(heightInch);
+
+                    resElem.innerText = `Width: ${widthMillimeter} mm (${widthInch} in)\nHeight: ${heightMillimeter} mm (${heightInch} in)`;
+                    break;
+                }
+
+                default: {
+                    alert('Unknown Mode');
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
