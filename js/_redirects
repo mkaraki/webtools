@@ -1,2 +1,2 @@
-# For Kindle
+# For Kindle, they don't recognize 308 redirect.
 /*.html /:splat 301
