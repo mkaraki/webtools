@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Media Queries Tester</title>
+    <style>
+        .chk-yes, .chk-no {
+            padding: 0.25em 0.5em;
+            border-radius: 0.25em;
+            font-size: 0.9em;
+        }
+        .chk-yes {
+            display: none;
+            background-color: green;
+            color: white;
+        }
+        .chk-no {
+            display: inline-block;
+            background-color: red;
+            color: white;
+        }
+        .chk-yes.forced-yes {
+            display: inline-block;
+        }
+        dd {
+            margin-top: 0.25em;
+            margin-bottom: 1em;
+        }
+        .override-color-yes {
+            background-color: green;
+            color: white;
+        }
+        .override-color-no {
+            background-color: red;
+            color: white;
+        }
+
+        @media (random-unknown-media-query) {
+            .chk-random-unknown-media-query.chk-yes { display: inline-block; }
+            .chk-random-unknown-media-query.chk-no { display: none; }
+        }
+        @media (random-unknown-media-query: 0) {
+            .chk-random-unknown-media-query-0.chk-yes { display: inline-block; }
+            .chk-random-unknown-media-query-0.chk-no { display: none; }
+        }
+        @media (random-unknown-media-query: none) {
+            .chk-random-unknown-media-query-none.chk-yes { display: inline-block; }
+            .chk-random-unknown-media-query-none.chk-no { display: none; }
+        }
+
+        @media (any-hover: hover) {
+            .chk-any-hover-hover.chk-yes { display: inline-block; }
+        }
+        @media (any-hover: none) {
+            .chk-any-hover-none.chk-yes { display: inline-block; }
+        }
+        @media (any-hover) {
+            .chk-any-hover.chk-yes { display: inline-block; }
+            .chk-any-hover.chk-no { display: none; }
+        }
+
+        @media (any-pointer: coarse) {
+            .chk-any-pointer-coarse.chk-yes { display: inline-block; }
+        }
+        @media (any-pointer: fine) {
+            .chk-any-pointer-fine.chk-yes { display: inline-block; }
+        }
+        @media (any-pointer: none) {
+            .chk-any-pointer-none.chk-yes { display: inline-block; }
+        }
+        @media (any-pointer) {
+            .chk-any-pointer.chk-yes { display: inline-block; }
+            .chk-any-pointer.chk-no { display: none; }
+        }
+
+        @media (aspect-ratio) {
+            .chk-aspect-ratio.chk-yes { display: inline-block; }
+            .chk-aspect-ratio.chk-no { display: none; }
+        }
+
+        @media (color) {
+            .chk-color.chk-yes { display: inline-block; }
+            .chk-color.chk-no { display: none; }
+        }
+        @media (color: 0) {
+            .chk-color-0.chk-yes { display: inline-block; }
+            /* When color is 0, @media (color) become false */
+            .chk-color-0.chk-no { display: none; }
+        }
+        @media (max-color: 7) {
+            .chk-color-less-than-8.chk-yes { display: inline-block; }
+        }
+        @media (min-color: 8) {
+            .chk-color-8-or-more.chk-yes { display: inline-block; }
+        }
+        @media (min-color: 12) {
+            .chk-color-12-or-more.chk-yes { display: inline-block; }
+        }
+        @media (min-color: 16) {
+            .chk-color-16-or-more.chk-yes { display: inline-block; }
+        }
+
+        @media (color-gamut: srgb) {
+            .chk-color-gamut-srgb.chk-yes { display: inline-block; }
+        }
+        @media (color-gamut: p3) {
+            .chk-color-gamut-p3.chk-yes { display: inline-block; }
+        }
+        @media (color-gamut: rec2020) {
+            .chk-color-gamut-rec2020.chk-yes { display: inline-block; }
+        }
+        @media (color-gamut) {
+            .chk-color-gamut.chk-yes { display: inline-block; }
+            .chk-color-gamut.chk-no { display: none; }
+        }
+
+        @media (color-index) {
+            .chk-color-index.chk-yes { display: inline-block; }
+            .chk-color-index.chk-no { display: none; }
+        }
+        @media (color-index: 0) {
+            .chk-color-index-0.chk-yes { display: inline-block; }
+            /* When color-index is 0, @media (color-index) become false */
+            .chk-color-index.chk-no { display: none; }
+        }
+        @media (max-color-index: 255) {
+            .chk-color-index-less-than-256.chk-yes { display: inline-block; }
+        }
+        @media (min-color-index: 256) {
+            .chk-color-index-256-or-more.chk-yes { display: inline-block; }
+        }
+
+        @media (device-aspect-ratio) {
+            .chk-device-aspect-ratio.chk-yes { display: inline-block; }
+            .chk-device-aspect-ratio.chk-no { display: none; }
+        }
+
+        @media (device-height) {
+            .chk-device-height.chk-yes { display: inline-block; }
+            .chk-device-height.chk-no { display: none; }
+        }
+
+        @media (device-width) {
+            .chk-device-width.chk-yes { display: inline-block; }
+            .chk-device-width.chk-no { display: none; }
+        }
+
+        @media (device-posture: continuous) {
+            .chk-device-posture-continuous.chk-yes { display: inline-block; }
+        }
+        @media (device-posture: folded) {
+            .chk-device-posture-folded.chk-yes { display: inline-block; }
+        }
+        @media (device-posture) {
+            .chk-device-posture.chk-yes { display: inline-block; }
+            .chk-device-posture.chk-no { display: none; }
+        }
+
+        @media (display-mode: browser) {
+            .chk-display-mode-browser.chk-yes { display: inline-block; }
+        }
+        @media (display-mode: fullscreen) {
+            .chk-display-mode-fullscreen.chk-yes { display: inline-block; }
+        }
+        @media (display-mode: minimal-ui) {
+            .chk-display-mode-minimal-ui.chk-yes { display: inline-block; }
+        }
+        @media (display-mode: picture-in-picture) {
+            .chk-display-mode-picture-in-picture.chk-yes { display: inline-block; }
+        }
+        @media (display-mode: standalone) {
+            .chk-display-mode-standalone.chk-yes { display: inline-block; }
+        }
+        @media (display-mode: window-controls-overlay) {
+            .chk-display-mode-window-controls-overlay.chk-yes { display: inline-block; }
+        }
+        @media (display-mode) {
+            .chk-display-mode.chk-yes { display: inline-block; }
+            .chk-display-mode.chk-no { display: none; }
+        }
+
+        @media (dynamic-range) {
+            /* This might not work? */
+            .chk-dynamic-range.chk-yes { display: inline-block; }
+            .chk-dynamic-range.chk-no { display: none; }
+        }
+        @media (dynamic-range: standard) {
+            .chk-dynamic-range-standard.chk-yes { display: inline-block; }
+            .chk-dynamic-range.chk-no { display: none; }
+        }
+        @media (dynamic-range: high) {
+            .chk-dynamic-range-high.chk-yes { display: inline-block; }
+            .chk-dynamic-range.chk-no { display: none; }
+        }
+
+        @media (forced-colors) {
+            .chk-forced-colors.chk-yes { display: inline-block; }
+            .chk-forced-colors.chk-no { display: none; }
+        }
+        @media (forced-colors: none) {
+            .chk-forced-colors-none.chk-yes { display: inline-block; }
+            .chk-forced-colors.chk-no { display: none; }
+        }
+        @media (forced-colors: active) {
+            .chk-forced-colors-active.chk-yes { display: inline-block; }
+            .chk-forced-colors.chk-no { display: none; }
+        }
+
+        @media (grid) {
+            .chk-grid.chk-yes { display: inline-block; }
+            .chk-grid.chk-no { display: none; }
+        }
+        @media (grid: 0) {
+            .chk-grid-0.chk-yes { display: inline-block; }
+            .chk-grid.chk-no { display: none; }
+        }
+        @media (grid: 1) {
+            .chk-grid-1.chk-yes { display: inline-block; }
+        }
+
+        @media (height) {
+            .chk-height.chk-yes { display: inline-block; }
+            .chk-height.chk-no { display: none; }
+        }
+
+        @media (width) {
+            .chk-width.chk-yes { display: inline-block; }
+            .chk-width.chk-no { display: none; }
+        }
+
+        @media (hover) {
+            .chk-hover.chk-yes { display: inline-block; }
+            .chk-hover.chk-no { display: none; }
+        }
+        @media (hover: hover) {
+            .chk-hover-hover.chk-yes { display: inline-block; }
+        }
+        @media (hover: none) {
+            .chk-hover-none.chk-yes { display: inline-block; }
+            .chk-hover.chk-no { display: none; }
+        }
+
+        @media (inverted-colors) {
+            .chk-inverted-colors.chk-yes { display: inline-block; }
+            .chk-inverted-colors.chk-no { display: none; }
+        }
+        @media (inverted-colors: none) {
+            .chk-inverted-colors-none.chk-yes { display: inline-block; }
+            .chk-inverted-colors.chk-no { display: none; }
+        }
+        @media (inverted-colors: inverted) {
+            .chk-inverted-colors-inverted.chk-yes { display: inline-block; }
+        }
+
+        @media (monochrome) {
+            .chk-monochrome.chk-yes { display: inline-block; }
+            .chk-monochrome.chk-no { display: none; }
+        }
+        @media (monochrome: 0) {
+            .chk-monochrome-0.chk-yes { display: inline-block; }
+            /* When monochrome is 0, @media (monochrome) become false */
+            .chk-monochrome.chk-no { display: none; }
+        }
+
+        @media (orientation) {
+            .chk-orientation.chk-yes { display: inline-block; }
+            .chk-orientation.chk-no { display: none; }
+        }
+        @media (orientation: portrait) {
+            .chk-orientation-portrait.chk-yes { display: inline-block; }
+        }
+        @media (orientation: landscape) {
+            .chk-orientation-landscape.chk-yes { display: inline-block; }
+        }
+
+        @media (overflow-block) {
+            .chk-overflow-block.chk-yes { display: inline-block; }
+            .chk-overflow-block.chk-no { display: none; }
+        }
+        @media (overflow-block: none) {
+            .chk-overflow-block-none.chk-yes { display: inline-block; }
+            .chk-overflow-block.chk-no { display: none; }
+        }
+        @media (overflow-block: scroll) {
+            .chk-overflow-block-scroll.chk-yes { display: inline-block; }
+        }
+        @media (overflow-block: optional-paged) {
+            .chk-overflow-block-optional-paged.chk-yes { display: inline-block; }
+        }
+        @media (overflow-block: paged) {
+            .chk-overflow-block-paged.chk-yes { display: inline-block; }
+        }
+
+        @media (overflow-inline) {
+            .chk-overflow-inline.chk-yes { display: inline-block; }
+            .chk-overflow-inline.chk-no { display: none; }
+        }
+        @media (overflow-inline: none) {
+            .chk-overflow-inline-none.chk-yes { display: inline-block; }
+            .chk-overflow-inline.chk-no { display: none; }
+        }
+        @media (overflow-inline: scroll) {
+            .chk-overflow-inline-scroll.chk-yes { display: inline-block; }
+        }
+
+        @media (pointer) {
+            .chk-pointer.chk-yes { display: inline-block; }
+            .chk-pointer.chk-no { display: none; }
+        }
+        @media (pointer: none) {
+            .chk-pointer-none.chk-yes { display: inline-block; }
+            .chk-pointer.chk-no { display: none; }
+        }
+        @media (pointer: coarse) {
+            .chk-pointer-coarse.chk-yes { display: inline-block; }
+        }
+        @media (pointer: fine) {
+            .chk-pointer-fine.chk-yes { display: inline-block; }
+        }
+
+        @media (prefers-color-scheme) {
+            .chk-prefers-color-scheme.chk-yes { display: inline-block; }
+            .chk-prefers-color-scheme.chk-no { display: none; }
+        }
+        @media (prefers-color-scheme: light) {
+            .chk-prefers-color-scheme-light.chk-yes { display: inline-block; }
+        }
+        @media (prefers-color-scheme: dark) {   
+            .chk-prefers-color-scheme-dark.chk-yes { display: inline-block; }
+        }
+
+        @media (prefers-contrast) {
+            .chk-prefers-contrast.chk-yes { display: inline-block; }
+            .chk-prefers-contrast.chk-no { display: none; }
+        }
+        @media (prefers-contrast: no-preference) {
+            .chk-prefers-contrast-no-preference.chk-yes { display: inline-block; }
+            .chk-prefers-contrast.chk-no { display: none; }
+        }
+        @media (prefers-contrast: less) {
+            .chk-prefers-contrast-less.chk-yes { display: inline-block; }
+        }
+        @media (prefers-contrast: more) {
+            .chk-prefers-contrast-more.chk-yes { display: inline-block; }
+        }
+        @media (prefers-contrast: custom) {
+            .chk-prefers-contrast-custom.chk-yes { display: inline-block; }
+        }
+
+        @media (prefers-reduced-motion) {
+            .chk-prefers-reduced-motion.chk-yes { display: inline-block; }
+            .chk-prefers-reduced-motion.chk-no { display: none; }
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            .chk-prefers-reduced-motion-no-preference.chk-yes { display: inline-block; }
+            .chk-prefers-reduced-motion.chk-no { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .chk-prefers-reduced-motion-reduce.chk-yes { display: inline-block; }
+        }
+
+        @media (prefers-reduced-transparency) {
+            .chk-prefers-reduced-transparency.chk-yes { display: inline-block; }
+            .chk-prefers-reduced-transparency.chk-no { display: none; }
+        }
+        @media (prefers-reduced-transparency: no-preference) {
+            .chk-prefers-reduced-transparency-no-preference.chk-yes { display: inline-block; }
+            .chk-prefers-reduced-transparency.chk-no { display: none; }
+        }
+        @media (prefers-reduced-transparency: reduce) {
+            .chk-prefers-reduced-transparency-reduce.chk-yes { display: inline-block; }
+        }
+
+        @media (resolution) {
+            .chk-resolution.chk-yes { display: inline-block; }
+            .chk-resolution.chk-no { display: none; }
+        }
+
+        @media (scripting) {
+            .chk-scripting.chk-yes { display: inline-block; }
+            .chk-scripting.chk-no { display: none; }
+        }
+        @media (scripting: none) {
+            .chk-scripting-none.chk-yes { display: inline-block; }
+            .chk-scripting.chk-no { display: none; }
+        }
+        @media (scripting: initial-only) {
+            .chk-scripting-initial-only.chk-yes { display: inline-block; }
+            .chk-scripting.chk-no { display: none; }
+        }
+        @media (scripting: enabled) {
+            .chk-scripting-enabled.chk-yes { display: inline-block; }
+            .chk-scripting.chk-no { display: none; }
+        }
+
+        @media (update) {
+            .chk-update.chk-yes { display: inline-block; }
+            .chk-update.chk-no { display: none; }
+        }
+        @media (update: none) {
+            .chk-update-none.chk-yes { display: inline-block; }
+            .chk-update.chk-no { display: none; }
+        }
+        @media (update: slow) {
+            .chk-update-slow.chk-yes { display: inline-block; }
+            .chk-update.chk-no { display: none; }
+        }
+        @media (update: fast) {
+            .chk-update-fast.chk-yes { display: inline-block; }
+            .chk-update.chk-no { display: none; }
+        }
+
+        @media (video-dynamic-range) {
+            .chk-video-dynamic-range.chk-yes { display: inline-block; }
+            .chk-video-dynamic-range.chk-no { display: none; }
+        }
+        @media (video-dynamic-range: standard) {
+            .chk-video-dynamic-range-standard.chk-yes { display: inline-block; }
+            .chk-video-dynamic-range.chk-no { display: none; }
+        }
+        @media (video-dynamic-range: high) {
+            .chk-video-dynamic-range-high.chk-yes { display: inline-block; }
+            .chk-video-dynamic-range.chk-no { display: none; }
+        }
+
+        /* Kindle Fire (All) Formatting */
+        @media (amzn-mobi) {
+            .chk-amzn-mobi.chk-yes { display: inline-block; }
+            .chk-amzn-mobi.chk-no { display: none; }
+        }
+        @media (amzn-kf8) {
+            .chk-amzn-kf8.chk-yes { display: inline-block; }
+            .chk-amzn-kf8.chk-no { display: none; }
+        }
+    </style>
+</head>
+
+<body id="body">
+    <header>
+        <h1>CSS Media Queries Tester</h1>
+        <hr />
+    </header>
+
+    <main>
+        <h2>How to use this page</h2>
+        <dl>
+            <dt><span class="chk-yes forced-yes">Parsed</span> or <span class="chk-yes forced-yes">Yes</span></dt>
+            <dd>
+                <p>
+                These tests indicate that the media query is supported and matches the current environment.
+                </p>
+                <p>
+                    In <span class="chk-yes forced-yes">Parsed</span> tests, it queries like <code>@media (any-hover)</code> or <code>@media (color)</code>, which only check if the media query is recognized and parsed by the browser. If the test shows <span class="chk-yes forced-yes">Yes</span>, it means that the media query is supported and matches the current environment like <code>@media (any-hover: hover)</code> or <code>@media (monochrome)</code>.
+                </p>
+            </dd>
+            <dt><span class="chk-no">Unsupported / Not sure</span></dt>
+            <dd>
+                <p>
+                    This indicates that the media query is either not supported or the test cannot determine its support status. It may be due to the media query being unrecognized, a syntax error, or the test not being able to detect it accurately.
+                </p>
+                <p>
+                    Please note that this might also fire when value is 0 in some case (e.g. <code>@media (color: 0)</code> or <code>@media (color-index: 0)</code>).
+                    We are trying to avoid such false negative as much as possible, but it may not be perfect. If you find any issue, please report to us with details of your environment and the test result.
+                </p>
+            </dd>
+        </dl>
+        <h2>Self Test</h2>
+        <dl>
+            <dt>Inline Block (With Override)</dt>
+            <dd>
+                <span class="chk-yes forced-yes">Pass</span>
+            </dd>
+            <dt>random-unknown-media-query</dt>
+            <dd>
+                <span class="chk-no override-color-yes chk-random-unknown-media-query">Pass</span>
+                <span class="chk-yes override-color-no chk-random-unknown-media-query">Fail (or your browser match <code>@media (random-unknown-media-query)</code>)</span>
+            </dd>
+            <dt>random-unknown-media-query: 0</dt>
+            <dd>
+                <span class="chk-no override-color-yes chk-random-unknown-media-query-0">Pass</span>
+                <span class="chk-yes override-color-no chk-random-unknown-media-query-0">Fail (or your browser match <code>@media (random-unknown-media-query: 0)</code>)</span>
+            </dd>
+            <dt>random-unknown-media-query: none</dt>
+            <dd>
+                <span class="chk-no override-color-yes chk-random-unknown-media-query-none">Pass</span>
+                <span class="chk-yes override-color-no chk-random-unknown-media-query-none">Fail (or your browser match <code>@media (random-unknown-media-query: none)</code>)</span>
+            </dd>
+        </dl>
+        <h2>Standard Media features</h2>
+        <dl>
+            <dt>any-hover</dt>
+            <dd>
+                <span class="chk-yes chk-any-hover">Parsed</span>
+                <span class="chk-yes chk-any-hover-hover">Yes (hover)</span>
+                <span class="chk-yes chk-any-hover-none">Yes (none)</span>
+                <span class="chk-no chk-any-hover">Unsupported / Not sure</span>
+            </dd>
+            <dt>any-pointer</dt>
+            <dd>
+                <span class="chk-yes chk-any-pointer">Parsed</span>
+                <span class="chk-yes chk-any-pointer-coarse">Yes (coarse)</span>
+                <span class="chk-yes chk-any-pointer-fine">Yes (fine)</span>
+                <span class="chk-yes chk-any-pointer-none">Yes (none)</span>
+                <span class="chk-no chk-any-pointer">Unsupported / Not sure</span>
+            </dd>
+            <dt>aspect-ratio</dt>
+            <dd>
+                <span class="chk-yes chk-aspect-ratio">Parsed</span>
+                <span class="chk-no chk-aspect-ratio">Unsupported / Not sure</span>
+            </dd>
+            <dt>color (Also use min-color and max-color for test)</dt>
+            <dd>
+                <span class="chk-yes chk-any-hover">Parsed</span>
+                <span class="chk-yes chk-color-0">Yes (= 0)</span>
+                <span class="chk-yes chk-color-less-than-8">Yes (&lt; 8)</span>
+                <span class="chk-yes chk-color-8-or-more">Yes (&ge; 8)</span>
+                <span class="chk-yes chk-color-12-or-more">Yes (&ge; 12)</span>
+                <span class="chk-yes chk-color-16-or-more">Yes (&ge; 16)</span>
+                <span class="chk-no chk-color">Unsupported / Not sure</span>
+            </dd>
+            <dt>color-gamut</dt>
+            <dd>
+                <span class="chk-yes chk-any-hover">Parsed</span>
+                <span class="chk-yes chk-color-gamut-srgb">Yes (sRGB)</span>
+                <span class="chk-yes chk-color-gamut-p3">Yes (P3)</span>
+                <span class="chk-yes chk-color-gamut-rec2020">Yes (Rec. 2020)</span>
+                <span class="chk-no chk-color-gamut">Unsupported / Not sure</span>
+            </dd>
+            <dt>color-index (Also use min-color-index and max-color-index for test)</dt>
+            <dd>
+                <span class="chk-yes chk-any-hover">Parsed</span>
+                <span class="chk-yes chk-color-index-0">Yes (= 0)</span>
+                <span class="chk-yes chk-color-index-less-than-256">Yes (&lt; 256)</span>
+                <span class="chk-yes chk-color-index-256-or-more">Yes (&ge; 256)</span>
+                <span class="chk-no chk-color-index">Unsupported / Not sure</span>
+            </dd>
+            <dt>device-aspect-ratio</dt>
+            <dd>
+                <span class="chk-yes chk-device-aspect-ratio">Parsed</span>
+                <span class="chk-no chk-device-aspect-ratio">Unsupported / Not sure</span>
+            </dd>
+            <dt>device-height</dt>
+            <dd>
+                <span class="chk-yes chk-device-height">Parsed</span>
+                <span class="chk-no chk-device-height">Unsupported / Not sure</span>
+            </dd>
+            <dt>device-width</dt>
+            <dd>
+                <span class="chk-yes chk-device-width">Parsed</span>
+                <span class="chk-no chk-device-width">Unsupported / Not sure</span>
+            </dd>
+            <dt>device-posture</dt>
+            <dd>
+                <span class="chk-yes chk-device-posture">Parsed</span>
+                <span class="chk-yes chk-device-posture-continuous">Yes (continuous)</span>
+                <span class="chk-yes chk-device-posture-folded">Yes (folded)</span>
+                <span class="chk-no chk-device-posture">Unsupported / Not sure</span>
+            </dd>
+            <dt>display-mode</dt>
+            <dd>
+                <span class="chk-yes chk-display-mode">Parsed</span>
+                <span class="chk-yes chk-display-mode-browser">Yes (browser)</span>
+                <span class="chk-yes chk-display-mode-fullscreen">Yes (fullscreen)</span>
+                <span class="chk-yes chk-display-mode-minimal-ui">Yes (minimal-ui)</span>
+                <span class="chk-yes chk-display-mode-picture-in-picture">Yes (picture-in-picture)</span>
+                <span class="chk-yes chk-display-mode-standalone">Yes (standalone)</span>
+                <span class="chk-yes chk-display-mode-window-controls-overlay">Yes (window-controls-overlay)</span>
+                <span class="chk-no chk-display-mode">Unsupported / Not sure</span>
+            </dd>
+            <dt>dynamic-range</dt>
+            <dd>
+                <span class="chk-yes chk-dynamic-range">Parsed</span>
+                <span class="chk-yes chk-dynamic-range-standard">Yes (standard)</span>
+                <span class="chk-yes chk-dynamic-range-high">Yes (high)</span>
+                <span class="chk-no chk-dynamic-range">Unsupported / Not sure</span>
+            </dd>
+            <dt>forced-colors</dt>
+            <dd>
+                <span class="chk-yes chk-forced-colors">Parsed</span>
+                <span class="chk-yes chk-forced-colors-none">Yes (none)</span>
+                <span class="chk-yes chk-forced-colors-active">Yes (active)</span>
+                <span class="chk-no chk-forced-colors">Unsupported / Not sure</span>
+            </dd>
+            <dt>grid</dt>
+            <dd>
+                <span class="chk-yes chk-grid">Parsed</span>
+                <span class="chk-yes chk-grid-0">Yes (0)</span>
+                <span class="chk-yes chk-grid-1">Yes (1)</span>
+                <span class="chk-no chk-grid">Unsupported / Not sure</span>
+            </dd>
+            <dt>height</dt>
+            <dd>
+                <span class="chk-yes chk-height">Parsed</span>
+                <span class="chk-no chk-height">Unsupported / Not sure</span>
+            </dd>
+            <dt>width</dt>
+            <dd>
+                <span class="chk-yes chk-width">Parsed</span>
+                <span class="chk-no chk-width">Unsupported / Not sure</span>
+            </dd>
+            <dt>hover</dt>
+            <dd>
+                <span class="chk-yes chk-hover">Parsed</span>
+                <span class="chk-yes chk-hover-none">Yes (none)</span>
+                <span class="chk-yes chk-hover-hover">Yes (hover)</span>
+                <span class="chk-no chk-hover">Unsupported / Not sure</span>
+            </dd>
+            <dt>inverted-colors</dt>
+            <dd>
+                <span class="chk-yes chk-inverted-colors">Parsed</span>
+                <span class="chk-yes chk-inverted-colors-none">Yes (none)</span>
+                <span class="chk-yes chk-inverted-colors-inverted">Yes (inverted)</span>
+                <span class="chk-no chk-inverted-colors">Unsupported / Not sure</span>
+            </dd>
+            <dt>monochrome</dt>
+            <dd>
+                <span class="chk-yes chk-monochrome">Yes</span>
+                <span class="chk-yes chk-monochrome-0">Yes (0)</span>
+                <span class="chk-no chk-monochrome">Unsupported / Not sure</span>
+            </dd>
+            <dt>orientation</dt>
+            <dd>
+                <span class="chk-yes chk-orientation">Parsed</span>
+                <span class="chk-yes chk-orientation-portrait">Yes (portrait)</span>
+                <span class="chk-yes chk-orientation-landscape">Yes (landscape)</span>
+                <span class="chk-no chk-orientation">Unsupported / Not sure</span>
+            </dd>
+            <dt>overflow-block</dt>
+            <dd>
+                <span class="chk-yes chk-overflow-block">Parsed</span>
+                <span class="chk-yes chk-overflow-block-none">Yes (none)</span>
+                <span class="chk-yes chk-overflow-block-scroll">Yes (scroll)</span>
+                <span class="chk-yes chk-overflow-block-optional-paged">Yes (optional-paged)</span>
+                <span class="chk-yes chk-overflow-block-paged">Yes (paged)</span>
+                <span class="chk-no chk-overflow-block">Unsupported / Not sure</span>
+            </dd>
+            <dt>overflow-inline</dt>
+            <dd>
+                <span class="chk-yes chk-overflow-inline">Parsed</span>
+                <span class="chk-yes chk-overflow-inline-none">Yes (none)</span>
+                <span class="chk-yes chk-overflow-inline-scroll">Yes (scroll)</span>
+                <span class="chk-no chk-overflow-inline">Unsupported / Not sure</span>
+            </dd>
+            <dt>pointer</dt>
+            <dd>
+                <span class="chk-yes chk-pointer">Parsed</span>
+                <span class="chk-yes chk-pointer-none">Yes (none)</span>
+                <span class="chk-yes chk-pointer-coarse">Yes (coarse)</span>
+                <span class="chk-yes chk-pointer-fine">Yes (fine)</span>
+                <span class="chk-no chk-pointer">Unsupported / Not sure</span>
+            </dd>
+            <dt>prefers-color-scheme</dt>
+            <dd>
+                <span class="chk-yes chk-prefers-color-scheme">Parsed</span>
+                <span class="chk-yes chk-prefers-color-scheme-light">Yes (light)</span>
+                <span class="chk-yes chk-prefers-color-scheme-dark">Yes (dark)</span>
+                <span class="chk-no chk-prefers-color-scheme">Unsupported / Not sure</span>
+            </dd>
+            <dt>prefers-contrast</dt>
+            <dd>
+                <span class="chk-yes chk-prefers-contrast">Parsed</span>
+                <span class="chk-yes chk-prefers-contrast-no-preference">Yes (no-preference)</span>
+                <span class="chk-yes chk-prefers-contrast-less">Yes (less)</span>
+                <span class="chk-yes chk-prefers-contrast-more">Yes (more)</span>
+                <span class="chk-yes chk-prefers-contrast-custom">Yes (custom)</span>
+                <span class="chk-no chk-prefers-contrast">Unsupported / Not sure</span>
+            </dd>
+            <dt>prefers-reduced-motion</dt>
+            <dd>
+                <span class="chk-yes chk-prefers-reduced-motion">Parsed</span>
+                <span class="chk-yes chk-prefers-reduced-motion-no-preference">Yes (no-preference)</span>
+                <span class="chk-yes chk-prefers-reduced-motion-reduce">Yes (reduce)</span>
+                <span class="chk-no chk-prefers-reduced-motion">Unsupported / Not sure</span>
+            </dd>
+            <dt>prefers-reduced-transparency</dt>
+            <dd>
+                <span class="chk-yes chk-prefers-reduced-transparency">Parsed</span>
+                <span class="chk-yes chk-prefers-reduced-transparency-no-preference">Yes (no-preference)</span>
+                <span class="chk-yes chk-prefers-reduced-transparency-reduce">Yes (reduce)</span>
+                <span class="chk-no chk-prefers-reduced-transparency">Unsupported / Not sure</span>
+            </dd>
+            <dt>resolution</dt>
+            <dd>
+                <span class="chk-yes chk-resolution">Parsed</span>
+                <span class="chk-no chk-resolution">Unsupported / Not sure</span>
+            </dd>
+            <dt>scripting</dt>
+            <dd>
+                <span class="chk-yes chk-scripting">Parsed</span>
+                <span class="chk-yes chk-scripting-none">Yes (none)</span>
+                <span class="chk-yes chk-scripting-initial-only">Yes (initial-only)</span>
+                <span class="chk-yes chk-scripting-enabled">Yes (enabled)</span>
+                <span class="chk-no chk-scripting">Unsupported / Not sure</span>
+            </dd>
+            <dt>update</dt>
+            <dd>
+                <span class="chk-yes chk-update">Parsed</span>
+                <span class="chk-yes chk-update-none">Yes (none)</span>
+                <span class="chk-yes chk-update-slow">Yes (slow)</span>
+                <span class="chk-yes chk-update-fast">Yes (fast)</span>
+                <span class="chk-no chk-update">Unsupported / Not sure</span>
+            </dd>
+            <dt>video-dynamic-range</dt>
+            <dd>
+                <span class="chk-yes chk-video-dynamic-range">Parsed</span>
+                <span class="chk-yes chk-video-dynamic-range-standard">Yes (standard)</span>
+                <span class="chk-yes chk-video-dynamic-range-high">Yes (high)</span>
+                <span class="chk-no chk-video-dynamic-range">Unsupported / Not sure</span>
+            </dd>
+        </dl>
+        <h2>Vendor specifics</h2>
+        <dl>
+            <dt>amzn-mobi</dt>
+            <dd>
+                <span class="chk-yes chk-amzn-mobi">Yes</span>
+                <span class="chk-no chk-amzn-mobi">Unsupported / Not sure</span>
+            </dd>
+            <dt>amzn-kf8</dt>
+            <dd>
+                <span class="chk-yes chk-amzn-kf8">Yes</span>
+                <span class="chk-no chk-amzn-kf8">Unsupported / Not sure</span>
+            </dd>
+        </dl>
+        <h2>References</h2>
+        <ul>
+            <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Using" target="_blank" rel="noopener noreferrer">Using media queries - CSS | MDN</a></li>
+        </ul>
+    </main>
+
+    <script>
+    </script>
+</body>
+
+</html>
