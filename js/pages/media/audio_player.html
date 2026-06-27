@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Player</title>
+    <style>
+        div.ib {
+            display: inline-block;
+            width: 40px;
+        }
+        canvas.peak {
+            display: inline-block;
+            width: calc(100vw - 160px);
+            height: 2.2em;
+            border: 1px solid gray;
+        }
+        div.peak-val {
+            display: inline-block;
+            width: 70px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Audio Player</h1>
+        <hr />
+    </header>
+    <div>
+        <h2>Input</h2>
+        <div>
+            <label for="input-file">Audio File: </label>
+            <input type="file" id="input-file" />
+        </div>
+        <div>
+            Display Media:
+            <button id="input-display">Open Display Media</button>
+        </div>
+    </div>
+    <div>
+        <h2>Control</h2>
+        <audio id="audio-elem" controls></audio>
+        <div>
+            <button onclick="hearAudio()">Hear Player Audio</button>
+            <button onclick="muteAudio()">Mute Player Audio</button>
+        </div>
+    </div>
+    <div>
+        <h2>Monitor</h2>
+        <div>
+            <div class="ib">
+                Level<br />
+                Ch.1
+            </div>
+            <canvas id="ch1-peak" class="peak"></canvas>
+            <div class="peak-val"><span id="ch1-peak-db">0</span>dB</div>
+        </div>
+        <div>
+            <div class="ib">
+                Level<br />
+                Ch.2
+            </div>
+            <canvas id="ch2-peak" class="peak"></canvas>
+            <div class="peak-val"><span id="ch2-peak-db">0</span>dB</div>
+        </div>
+        <hr />
+        <div>
+            <div class="ib">
+                RMS<br />
+                Ch.1
+            </div>
+            <canvas id="ch1-rms" class="peak"></canvas>
+            <div class="peak-val"><span id="ch1-rms-db">0</span>dB</div>
+        </div>
+        <div>
+            <div class="ib">
+                RMS<br />
+                Ch.2
+            </div>
+            <canvas id="ch2-rms" class="peak"></canvas>
+            <div class="peak-val"><span id="ch2-rms-db">0</span>dB</div>
+        </div>
+        <hr />
+        <div>
+            <div class="ib"></div>
+            <canvas id="level-axis" class="peak"></canvas>
+            0dB
+        </div>
+    </div>
+    <script>
+        const inputFile = document.getElementById('input-file');
+        const inputDisplayElem = document.getElementById('input-display');
+        const audioElem = document.getElementById('audio-elem');
+
+        const peakCanvas1chElem = document.getElementById('ch1-peak');
+        const peakCanvas1chCtx = peakCanvas1chElem.getContext('2d');
+        const peakCanvas2chElem = document.getElementById('ch2-peak');
+        const peakCanvas2chCtx = peakCanvas2chElem.getContext('2d');
+
+        const peakDb1chElem = document.getElementById('ch1-peak-db');
+        const peakDb2chElem = document.getElementById('ch2-peak-db');
+
+        const rmsCanvas1chElem = document.getElementById('ch1-rms');
+        const rmsCanvas1chCtx = rmsCanvas1chElem.getContext('2d');
+        const rmsCanvas2chElem = document.getElementById('ch2-rms');
+        const rmsCanvas2chCtx = rmsCanvas2chElem.getContext('2d');
+
+        const rmsDb1chElem = document.getElementById('ch1-rms-db');
+        const rmsDb2chElem = document.getElementById('ch2-rms-db');
+
+        const axisElem = document.getElementById('level-axis');
+        const axisCtx = axisElem.getContext('2d');
+
+        let audioCtx = null;
+        let splitterNode = null;
+        let analyzerLeft = null;
+        let analyzerRight = null;
+        let analyzerFull = null;
+        let audioSourceNode = null;
+
+        function hearAudio() {
+            audioSourceNode.connect(audioCtx.destination);
+        }
+
+        function muteAudio() {
+            audioSourceNode.disconnect(audioCtx.destination);
+        }
+
+        function initAudioElementSource(source) {
+            if (audioSourceNode !== null) {
+                audioSourceNode.disconnect();
+                audioSourceNode = null;
+            }
+            audioSourceNode = audioCtx.createMediaElementSource(audioElem);
+
+            audioSourceNode.connect(splitterNode);
+            audioSourceNode.connect(analyzerFull);
+            splitterNode.connect(analyzerLeft, 0);
+            splitterNode.connect(analyzerRight, 1);
+        }
+
+        function initAudioStreamSource(stream) {
+            if (audioSourceNode !== null) {
+                audioSourceNode.disconnect();
+                audioSourceNode = null;
+            }
+            audioSourceNode = audioCtx.createMediaStreamSource(stream);
+
+            audioSourceNode.connect(splitterNode);
+            audioSourceNode.connect(analyzerFull);
+            splitterNode.connect(analyzerLeft, 0);
+            splitterNode.connect(analyzerRight, 1);
+        }
+
+        function initAudioEngine() {
+            if (audioCtx !== null)
+                destroyAudioEngine();
+
+            audioCtx = new window.AudioContext();
+
+            analyzerLeft = audioCtx.createAnalyser();
+            analyzerRight = audioCtx.createAnalyser();
+            analyzerFull = audioCtx.createAnalyser();
+
+            splitterNode = audioCtx.createChannelSplitter(2);
+
+            analyzerLeft.fftSize = 1024;
+            analyzerLeft.smoothingTimeConstant = 0.3;
+            analyzerRight.fftSize = 1024;
+            analyzerRight.smoothingTimeConstant = 0.3;
+
+            analyzerFull.fftSize = 1024;
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function destroyAudioEngine() {
+            analyzerLeft.dispose();
+            analyzerLeft = null;
+            analyzerRight.dispose();
+            analyzerRight = null;
+            splitterNode.dispose();
+            splitterNode = null;
+            analyzerFull.dispose();
+            analyzerFull = null;
+            audioSourceNode.dispose();
+            audioSourceNode = null;
+            audioCtx.dispose();
+            audioCtx = null;
+        }
+
+        const dataLArray = new Float32Array(512);
+        const dataRArray = new Float32Array(512);
+
+        const MIN_DB_VALUE = -60;
+        const DECAY_MULTIPLIER = 0.95;
+        const PEAK_HOLD_DURATION = 1000;
+
+        const RMS_DECAY = 0.85;
+
+        async function sampleChannelLevel(analyzer, dataArray, currentDb, lastPeakDb, lastPeakTime, currentRms) {
+            analyzer.getFloatTimeDomainData(dataArray);
+
+            let instantaneousPeak = 0;
+            let sumSquares = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const val = dataArray[i];
+                const absVal = Math.abs(val);
+                if (absVal > instantaneousPeak) instantaneousPeak = absVal;
+                sumSquares += val * val;
+            }
+            const rms = Math.sqrt(sumSquares / dataArray.length);
+
+            let db = 20 * Math.log10(instantaneousPeak || 0.00001);
+            if (db < MIN_DB_VALUE) db = MIN_DB_VALUE;
+
+            let dbRms = 20 * Math.log10(rms || 0.00001);
+            if (dbRms < MIN_DB_VALUE) dbRms = MIN_DB_VALUE;
+
+            let ret = {
+                newDb: 0, // Not have to initialize.
+                newRms: 0,
+                newPeakDb: lastPeakDb,
+                newPeakTime: lastPeakTime,
+            }
+
+            if (db > currentDb) {
+                ret.newDb = db;
+            } else {
+                // Decay
+                ret.newDb = currentDb * DECAY_MULTIPLIER + db * (1 - DECAY_MULTIPLIER);
+            }
+
+            const currentTime = Date.now();
+
+            if (db > lastPeakDb) {
+                ret.newPeakDb = db;
+                ret.newPeakTime = currentTime;
+            } else if (currentTime - lastPeakTime > PEAK_HOLD_DURATION) {
+                ret.newPeakDb = lastPeakDb - 0.6;
+                if (ret.newPeakDb < MIN_DB_VALUE) ret.newPeakDb = MIN_DB_VALUE;
+            }
+
+            ret.newRms = currentRms * RMS_DECAY + dbRms * (1 - RMS_DECAY);
+
+            return Promise.resolve(ret);
+        }
+
+        let dbLeft, dbRight,
+            peakDbLeft, peakDbRight,
+            lastPeakTimeLeft, lastPeakTimeRight,
+            rmsLeft, rmsRight;
+
+        dbLeft = MIN_DB_VALUE; dbRight = MIN_DB_VALUE;
+        peakDbLeft = MIN_DB_VALUE; peakDbRight = MIN_DB_VALUE;
+        lastPeakTimeLeft = 0; lastPeakTimeRight = 0;
+        rmsLeft = MIN_DB_VALUE; rmsRight = MIN_DB_VALUE;
+
+        let sampleUpdating = false;
+
+        function sampleLevels() {
+            if (!audioCtx || !analyzerLeft || !analyzerRight) return;
+
+            if (sampleUpdating) return;
+            sampleUpdating = true;
+
+            Promise.all([
+                sampleChannelLevel(
+                    analyzerLeft,
+                    dataLArray,
+                    dbLeft,
+                    peakDbLeft,
+                    lastPeakTimeLeft,
+                    rmsLeft
+                ),
+                sampleChannelLevel(
+                    analyzerRight,
+                    dataRArray,
+                    dbRight,
+                    peakDbRight,
+                    lastPeakTimeRight,
+                    rmsRight
+                ),
+            ]).then(function(calcRes) {
+                dbLeft = calcRes[0].newDb;
+                peakDbLeft = calcRes[0].newPeakDb;
+                lastPeakTimeLeft = calcRes[0].newPeakTime;
+                rmsLeft = calcRes[0].newRms;
+
+                dbRight = calcRes[1].newDb;
+                peakDbRight = calcRes[1].newPeakDb;
+                lastPeakTimeRight = calcRes[1].newPeakTime;
+                rmsRight = calcRes[1].newRms;
+
+                sampleUpdating = false;
+            });
+        }
+
+        function animationFrame() {
+            requestAnimationFrame(animationFrame);
+
+            sampleLevels();
+
+            // Peak info
+            peakDb1chElem.textContent = peakDbLeft <= MIN_DB_VALUE ? '-INF' : peakDbLeft.toFixed(2);
+            peakDb2chElem.textContent = peakDbRight <= MIN_DB_VALUE ? '-INF' : peakDbRight.toFixed(2);
+
+            // Peak level bar
+            renderLevelBar(peakCanvas1chElem, peakCanvas1chCtx, dbLeft, peakDbLeft);
+            renderLevelBar(peakCanvas2chElem, peakCanvas2chCtx, dbRight, peakDbRight);
+
+            // RMS level bar
+            renderRmsBar(rmsCanvas1chElem, rmsCanvas1chCtx, rmsLeft);
+            renderRmsBar(rmsCanvas2chElem, rmsCanvas2chCtx, rmsRight);
+            rmsDb1chElem.textContent = rmsLeft <= MIN_DB_VALUE ? '-INF' : rmsLeft.toFixed(2);
+            rmsDb2chElem.textContent = rmsRight <= MIN_DB_VALUE ? '-INF' : rmsRight.toFixed(2);
+
+        }
+
+        const LEVEL_BAR_MAX_DB = 0;
+        const LEVEL_BAR_DB_SPAN = LEVEL_BAR_MAX_DB - MIN_DB_VALUE;
+
+        function renderLevelBar(canvas, ctx, currentDb, peakDb) {
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const dbFraction = Math.max(0, Math.min(1, (currentDb - MIN_DB_VALUE) / LEVEL_BAR_DB_SPAN));
+            const currentWidth = dbFraction * width;
+
+            const peakFraction = Math.max(0, Math.min(1, (peakDb - MIN_DB_VALUE) / LEVEL_BAR_DB_SPAN));
+            const peakX = peakFraction * width;
+
+            // Write simple bar
+            ctx.fillStyle = 'rgb(0, 255, 0)';
+            ctx.fillRect(0, 0, currentWidth, height);
+
+            // Write Peak
+            ctx.fillStyle = 'rgb(255, 0, 0)';
+            ctx.fillRect(peakX - 2, 0, 4, height);
+        }
+
+        function renderRmsBar(canvas, ctx, currentRms) {
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const dbFraction = Math.max(0, Math.min(1, (currentRms - MIN_DB_VALUE) / LEVEL_BAR_DB_SPAN));
+            const currentWidth = dbFraction * width;
+
+            // Write simple bar
+            ctx.fillStyle = 'rgb(0, 255, 0)';
+            ctx.fillRect(0, 0, currentWidth, height);
+        }
+
+        inputFile.addEventListener('change', async function () {
+            audioElem.src = URL.createObjectURL(inputFile.files[0]);
+            await audioElem.load();
+            // Init
+            initAudioElementSource(audioElem);
+
+            hearAudio();
+            await audioElem.play();
+        });
+
+        inputDisplayElem.addEventListener('click', async function() {
+            const stream = await navigator.mediaDevices.getDisplayMedia(
+                {
+                    video: true,
+                    audio: true,
+                },
+            );
+
+            // Init
+            initAudioStreamSource(stream);
+            muteAudio();
+        });
+
+        function writeAxis() {
+            [-60, -50, -40, -30, -24, -20, -16, -12, -9, -6, -3].forEach(function(db) {
+                const width = axisElem.width;
+                const height = axisElem.height;
+
+                const dbFraction = Math.max(0, Math.min(1, (db - MIN_DB_VALUE) / LEVEL_BAR_DB_SPAN));
+                const dbX = dbFraction * width;
+
+                axisCtx.fillStyle = 'rgb(255, 0, 0)';
+                axisCtx.fillRect(dbX - 1, 0, 2, height);
+
+                axisCtx.fillText(`${db}`, dbX + 3, height - 14);
+                axisCtx.fillText('dB', dbX + 3, height - 3);
+            });
+        }
+
+        function onResize() {
+            peakCanvas1chElem.width = peakCanvas1chElem.clientWidth;
+            peakCanvas1chElem.height = peakCanvas1chElem.clientHeight;
+            peakCanvas2chElem.width = peakCanvas2chElem.clientWidth;
+            peakCanvas2chElem.height = peakCanvas2chElem.clientHeight;
+
+            rmsCanvas1chElem.width = rmsCanvas1chElem.clientWidth;
+            rmsCanvas1chElem.height = rmsCanvas1chElem.clientHeight;
+            rmsCanvas2chElem.width = rmsCanvas2chElem.clientWidth;
+            rmsCanvas2chElem.height = rmsCanvas2chElem.clientHeight;
+
+            axisElem.width = axisElem.clientWidth;
+            axisElem.height = axisElem.clientHeight;
+            writeAxis();
+        }
+
+        window.addEventListener('resize', onResize);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initAudioEngine();
+            // kickoff first frame
+            animationFrame();
+            // Initialize Canvas size
+            onResize();
+        });
+    </script>
+</body>
+</html>
