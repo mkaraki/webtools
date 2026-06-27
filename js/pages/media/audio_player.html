@@ -117,39 +117,47 @@
         let analyzerRight = null;
         let analyzerFull = null;
         let audioSourceNode = null;
+        let mediaElementSourceNode = null;
+        let currentObjectUrl = null;
+        let isAudioOutputConnected = false;
 
         function hearAudio() {
+            if (!audioSourceNode || !audioCtx) return;
+            if (isAudioOutputConnected) return;
             audioSourceNode.connect(audioCtx.destination);
+            isAudioOutputConnected = true;
         }
 
         function muteAudio() {
+            if (!audioSourceNode || !audioCtx) return;
+            if (!isAudioOutputConnected) return;
             audioSourceNode.disconnect(audioCtx.destination);
+            isAudioOutputConnected = false;
         }
 
-        function initAudioElementSource(source) {
+        function connectAudioSource(sourceNode) {
             if (audioSourceNode !== null) {
                 audioSourceNode.disconnect();
-                audioSourceNode = null;
+                isAudioOutputConnected = false;
             }
-            audioSourceNode = audioCtx.createMediaElementSource(audioElem);
 
+            audioSourceNode = sourceNode;
             audioSourceNode.connect(splitterNode);
             audioSourceNode.connect(analyzerFull);
             splitterNode.connect(analyzerLeft, 0);
             splitterNode.connect(analyzerRight, 1);
+        }
+
+        function initAudioElementSource() {
+            if (mediaElementSourceNode === null) {
+                mediaElementSourceNode = audioCtx.createMediaElementSource(audioElem);
+            }
+
+            connectAudioSource(mediaElementSourceNode);
         }
 
         function initAudioStreamSource(stream) {
-            if (audioSourceNode !== null) {
-                audioSourceNode.disconnect();
-                audioSourceNode = null;
-            }
-            audioSourceNode = audioCtx.createMediaStreamSource(stream);
-
-            audioSourceNode.connect(splitterNode);
-            audioSourceNode.connect(analyzerFull);
-            splitterNode.connect(analyzerLeft, 0);
-            splitterNode.connect(analyzerRight, 1);
+            connectAudioSource(audioCtx.createMediaStreamSource(stream));
         }
 
         function initAudioEngine() {
@@ -176,18 +184,42 @@
             }
         }
 
+        async function ensureAudioEngine() {
+            if (audioCtx === null) {
+                initAudioEngine();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+        }
+
         function destroyAudioEngine() {
-            analyzerLeft.dispose();
+            if (audioSourceNode !== null) {
+                audioSourceNode.disconnect();
+                audioSourceNode = null;
+            }
+            if (mediaElementSourceNode !== null) {
+                mediaElementSourceNode.disconnect();
+                mediaElementSourceNode = null;
+            }
+            if (splitterNode !== null) {
+                splitterNode.disconnect();
+            }
+            if (analyzerLeft !== null) {
+                analyzerLeft.disconnect();
+            }
+            if (analyzerRight !== null) {
+                analyzerRight.disconnect();
+            }
+            if (analyzerFull !== null) {
+                analyzerFull.disconnect();
+            }
             analyzerLeft = null;
-            analyzerRight.dispose();
             analyzerRight = null;
-            splitterNode.dispose();
             splitterNode = null;
-            analyzerFull.dispose();
             analyzerFull = null;
-            audioSourceNode.dispose();
-            audioSourceNode = null;
-            audioCtx.dispose();
+            audioCtx.close();
             audioCtx = null;
         }
 
@@ -357,24 +389,62 @@
             ctx.fillRect(0, 0, currentWidth, height);
         }
 
-        inputFile.addEventListener('change', async function () {
-            audioElem.src = URL.createObjectURL(inputFile.files[0]);
-            await audioElem.load();
-            // Init
-            if (!(audioSourceNode instanceof MediaElementAudioSourceNode)) {
-                try {
-                    initAudioElementSource(audioElem);
-                }
-                catch {
-                    alert('Failed to initialize. Try reload this page.')
-                }
+        function waitForAudioReady() {
+            if (audioElem.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                return Promise.resolve();
             }
 
-            hearAudio();
-            await audioElem.play();
+            return new Promise(function(resolve, reject) {
+                audioElem.addEventListener('loadedmetadata', resolve, { once: true });
+                audioElem.addEventListener('error', reject, { once: true });
+            });
+        }
+
+        async function loadAudioFile(file) {
+            if (!file) return;
+
+            try {
+                await ensureAudioEngine();
+
+                if (currentObjectUrl !== null) {
+                    URL.revokeObjectURL(currentObjectUrl);
+                }
+
+                currentObjectUrl = URL.createObjectURL(file);
+                audioElem.src = currentObjectUrl;
+                audioElem.load();
+                await waitForAudioReady();
+
+                initAudioElementSource();
+                hearAudio();
+                await audioElem.play();
+            }
+            catch (err) {
+                console.error('Failed to load audio file:', err);
+                alert('Failed to load audio file. Try dropping it again.');
+            }
+        }
+
+        inputFile.addEventListener('change', async function () {
+            await loadAudioFile(inputFile.files[0]);
+        });
+
+        inputFile.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        inputFile.addEventListener('drop', async function(e) {
+            e.preventDefault();
+
+            if (e.dataTransfer.files.length > 0) {
+                inputFile.files = e.dataTransfer.files;
+                await loadAudioFile(e.dataTransfer.files[0]);
+            }
         });
 
         inputDisplayElem.addEventListener('click', async function() {
+            await ensureAudioEngine();
+
             const stream = await navigator.mediaDevices.getDisplayMedia(
                 {
                     video: true,
@@ -422,7 +492,6 @@
         window.addEventListener('resize', onResize);
 
         document.addEventListener('DOMContentLoaded', function() {
-            initAudioEngine();
             // kickoff first frame
             animationFrame();
             // Initialize Canvas size
