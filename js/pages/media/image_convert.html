@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Preview/Convert</title>
+    <style>
+        img {
+            max-height: 30vh;
+            max-width: 100vw;
+        }
+        div {
+            margin-bottom: 0.5em;
+        }
+        img.hist {
+            max-width: 100vw;
+            max-height: 30vh;
+            width: 256px;
+            height: 200px;
+            border: 1px solid gray;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Image Preview/Convert</h1>
+        <hr />
+    </header>
+    <div>
+        <div>
+            <label for="image-input">Input image</label>
+            <input type="file" id="image-input" accept="image/*">
+        </div>
+        <div>
+            Preview:<br />
+            <img id="image-preview" alt="Image Preview" src="/assets/1dot-white.png" loading="lazy">
+        </div>
+        <div>
+            <dl>
+                <dt>Dimensions</dt>
+                <dd id="image-dim">Unknown</dd>
+                <dt>Total Pixels</dt>
+                <dd id="image-pixels">Unknown</dd>
+                <dt>Aspect Ratio</dt>
+                <dd id="image-ratio">Unknown</dd>
+            </dl>
+            <button id="adv-analysis">Perform Advanced Analysis</button>
+            <div id="adv-analysis-res"></div>
+        </div>
+        <hr />
+        <div>
+            <div>
+                <label for="cvt-type">Export image type</label>
+                <input type="text" id="cvt-type" value="image/webp" list="cvt-type-list" />
+                <datalist id="cvt-type-list">
+                    <option value="image/jpeg">JPEG</option>
+                    <option value="image/png">PNG</option>
+                    <option value="image/webp">WebP</option>
+                </datalist>
+            </div>
+            <div>
+                <label for="cvt-quality">Quality</label>
+                <input type="number" id="cvt-quality" value="0.90" step="0.01" min="0" max="1">
+            </div>
+            <div>
+                <button id="cvt-process">Convert</button>
+            </div>
+            <div>
+                Convert Result Preview:<br/>
+                <img id="cvt-res" alt="Convert Result Image Preview" src="/assets/1dot-white.png" loading="lazy" />
+            </div>
+            <div>
+                <a id="cvt-dl">Download</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const imagePreview = document.getElementById('image-preview');
+
+        const imageDimElem = document.getElementById('image-dim');
+        const imagePixelsElem = document.getElementById('image-pixels');
+        const imageRatioElem = document.getElementById('image-ratio');
+
+        const cvtTypeElem = document.getElementById('cvt-type');
+        const cvtQualityElem = document.getElementById('cvt-quality');
+        const cvtProcessElem = document.getElementById('cvt-process');
+        const cvtResElem = document.getElementById('cvt-res');
+        const cvtDlElem = document.getElementById('cvt-dl');
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function gcd(a, b) {
+            a = Math.abs(a);
+            b = Math.abs(b);
+            while (b !== 0) {
+                const temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+
+        function aspectDisplayFormatter(width, height) {
+            const ratio = width / height;
+
+            // Return well known (and non-safe) ratios
+            switch (ratio) {
+                case 1.6:
+                    return '16:10';
+                case 0.625:
+                    return '10:16';
+                case 1366/768:
+                    return 'approx. 16:9';
+                case 768/1366:
+                    return 'approx. 9:16';
+                case 2340/1080:
+                    return '19.5:9';
+                case 1080/2340:
+                    return '9:19.5';
+                case 7/3:
+                    return '21:9';
+                case 3/7:
+                    return '9:21';
+            }
+
+            const divisor = gcd(width, height);
+            let ratioW = width / divisor;
+            let ratioH = height / divisor;
+
+            return `${ratioW}:${ratioH}`;
+        }
+
+        imageInput.addEventListener('change', function (e) {
+            const img = new Image();
+            img.src = URL.createObjectURL(e.target.files[0]);
+            img.onload = () => {
+                const width = img.naturalWidth !== 0 ? img.naturalWidth : img.width;
+                const height = img.naturalHeight !== 0 ? img.naturalHeight : img.height;
+                imageDimElem.textContent = `${width} x ${height}`;
+                imagePixelsElem.textContent = `${width * height}`;
+
+                imageRatioElem.textContent = `${aspectDisplayFormatter(width, height)}`;
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0);
+
+                imagePreview.src = canvas.toDataURL('image/png');
+            };
+        });
+
+        function getImageExtension(mime) {
+            switch (mime.toLowerCase()) {
+                case 'image/jpeg':
+                    return 'jpg';
+                case 'image/png':
+                    return 'png';
+                case 'image/webp':
+                    return 'webp';
+                default:
+                    return 'bin';
+            }
+        }
+
+        cvtProcessElem.addEventListener('click', function () {
+            const mime = cvtTypeElem.value;
+            const quality = parseFloat(cvtQualityElem.value);
+
+            let dataUrl;
+
+            try {
+                dataUrl = canvas.toDataURL(mime, quality);
+            }
+            catch (e) {
+                alert(`Failed to conversion: ${e.message}`);
+            }
+
+            cvtResElem.src = dataUrl;
+            cvtDlElem.href = dataUrl;
+            cvtDlElem.download = `converted.${getImageExtension(mime)}`;
+        });
+
+        function createCanvasWithSize(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            return canvas;
+        }
+
+        function fillWhite(canvas, ctx) {
+            const fillStyleBackup = ctx.fillStyle;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = fillStyleBackup;
+        }
+
+        const advAnalysis = document.getElementById('adv-analysis');
+        const advAnalysisResElem = document.getElementById('adv-analysis-res');
+        advAnalysis.addEventListener('click', function () {
+            advAnalysisResElem.innerHTML = 'Checking';
+
+            const wid = canvas.width;
+            const hei = canvas.height;
+            const size2d = wid * hei;
+
+            let histR = Array(256).fill(0);
+            let histG = Array(256).fill(0);
+            let histB = Array(256).fill(0);
+            let histA = Array(256).fill(0);
+
+            const pixels = ctx.getImageData(0, 0, wid, hei, { colorSpace: 'srgb' }).data;
+
+            for (let w = 0; w < wid; w++) {
+                for (let h = 0; h < hei; h++) {
+                    const idx = (w + h * wid) * 4;
+                    const pix = pixels.subarray(idx, idx + 4);
+
+                    const r = pix[0];
+                    const g = pix[1];
+                    const b = pix[2];
+                    const a = pix[3];
+
+                    histR[r]++;
+                    histG[g]++;
+                    histB[b]++;
+                    histA[a]++;
+                }
+            }
+
+            console.log(histR, histG, histB, histA);
+
+            const histRMax = Math.max(...histR);
+            const histGMax = Math.max(...histG);
+            const histBMax = Math.max(...histB);
+            const histAMax = Math.max(...histA);
+
+            const histHeight = 200;
+
+            const histRCanvas = createCanvasWithSize(256, histHeight);
+            const histRCtx = histRCanvas.getContext('2d');
+            const histGCanvas = createCanvasWithSize(256, histHeight);
+            const histGCtx = histGCanvas.getContext('2d');
+            const histBCanvas = createCanvasWithSize(256, histHeight);
+            const histBCtx = histBCanvas.getContext('2d');
+            const histACanvas = createCanvasWithSize(256, histHeight);
+            const histACtx = histACanvas.getContext('2d');
+
+            fillWhite(histRCanvas, histRCtx);
+            fillWhite(histGCanvas, histGCtx);
+            fillWhite(histBCanvas, histBCtx);
+            fillWhite(histACanvas, histACtx);
+
+            histRCtx.fillStyle = 'rgb(255, 0, 0)';
+            histGCtx.fillStyle = 'rgb(0, 255, 0)';
+            histBCtx.fillStyle = 'rgb(0, 0, 255)';
+            histACtx.fillStyle = 'rgb(0, 0, 0)';
+
+            const calcHistMax = histHeight - 1
+
+            for (let i = 0; i < 256; i++) {
+                const histRY = Math.round(histR[i] / histRMax * calcHistMax);
+                const histGY = Math.round(histG[i] / histGMax * calcHistMax);
+                const histBY = Math.round(histB[i] / histBMax * calcHistMax);
+                const histAY = Math.round(histA[i] / histAMax * calcHistMax);
+
+                histRCtx.fillRect(i, histHeight - histRY, 1, histRY);
+                histGCtx.fillRect(i, histHeight - histGY, 1, histGY);
+                histBCtx.fillRect(i, histHeight - histBY, 1, histBY);
+                histACtx.fillRect(i, histHeight - histAY, 1, histAY);
+            }
+
+            histRCtx.fillStyle = 'black';
+            histRCtx.fillText(`Max: ${histRMax}`, 5, 15);
+            histGCtx.fillStyle = 'black';
+            histGCtx.fillText(`Max: ${histGMax}`, 5, 15);
+            histBCtx.fillStyle = 'black';
+            histBCtx.fillText(`Max: ${histBMax}`, 5, 15);
+            histACtx.fillStyle = 'red';
+            histACtx.fillText(`Max: ${histAMax}`, 5, 15);
+
+            const histRImg = document.createElement('img');
+            histRImg.classList.add('hist');
+            histRImg.src = histRCanvas.toDataURL('image/png');
+
+            const histGImg = document.createElement('img');
+            histGImg.classList.add('hist');
+            histGImg.src = histGCanvas.toDataURL('image/png');
+
+            const histBImg = document.createElement('img');
+            histBImg.classList.add('hist');
+            histBImg.src = histBCanvas.toDataURL('image/png');
+
+            const histAImg = document.createElement('img');
+            histAImg.classList.add('hist');
+            histAImg.src = histACanvas.toDataURL('image/png');
+
+            advAnalysisResElem.innerHTML = '';
+
+            advAnalysisResElem.appendChild(histRImg);
+            advAnalysisResElem.appendChild(histGImg);
+            advAnalysisResElem.appendChild(histBImg);
+            advAnalysisResElem.appendChild(histAImg);
+        });
+    </script>
+</body>
+</html>
