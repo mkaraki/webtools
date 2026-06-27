@@ -361,7 +361,14 @@
             audioElem.src = URL.createObjectURL(inputFile.files[0]);
             await audioElem.load();
             // Init
-            initAudioElementSource(audioElem);
+            if (!(audioSourceNode instanceof MediaElementAudioSourceNode)) {
+                try {
+                    initAudioElementSource(audioElem);
+                }
+                catch {
+                    alert('Failed to initialize. Try reload this page.')
+                }
+            }
 
             hearAudio();
             await audioElem.play();
