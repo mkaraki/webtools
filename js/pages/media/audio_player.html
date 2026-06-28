@@ -49,6 +49,14 @@
     <div>
         <h2>Monitor</h2>
         <div>
+            Peak Ch.1 Level: <span id="peak-db-ch1">-INF</span>dB,
+            Peak Ch.2 Level: <span id="peak-db-ch2">-INF</span>dB,<br />
+            Peak Ch.1 RMS: <span id="peak-rms-ch1">-INF</span>dB,
+            Peak Ch.2 RMS: <span id="peak-rms-ch2">-INF</span>dB<br />
+            <button id="peak-reset">Reset</button>
+            <hr />
+        </div>
+        <div>
             <div class="ib">
                 Level<br />
                 Ch.1
@@ -92,6 +100,12 @@
         const inputFile = document.getElementById('input-file');
         const inputDisplayElem = document.getElementById('input-display');
         const audioElem = document.getElementById('audio-elem');
+
+        const maxDb1chElem = document.getElementById('peak-db-ch1');
+        const maxDb2chElem = document.getElementById('peak-db-ch2');
+        const maxRms1chElem = document.getElementById('peak-rms-ch1');
+        const maxRms2chElem = document.getElementById('peak-rms-ch2');
+        const maxReset = document.getElementById('peak-reset');
 
         const peakCanvas1chElem = document.getElementById('ch1-peak');
         const peakCanvas1chCtx = peakCanvas1chElem.getContext('2d');
@@ -291,6 +305,13 @@
         lastPeakTimeLeft = 0; lastPeakTimeRight = 0;
         rmsLeft = MIN_DB_VALUE; rmsRight = MIN_DB_VALUE;
 
+        let maxDb1ch, maxDb2ch, maxRms1ch, maxRms2ch;
+        maxDb1ch = maxDb2ch = maxRms1ch = maxRms2ch = MIN_DB_VALUE;
+
+        maxReset.addEventListener('click', function () {
+            maxDb1ch = maxDb2ch = maxRms1ch = maxRms2ch = MIN_DB_VALUE;
+        })
+
         let sampleUpdating = false;
 
         function sampleLevels() {
@@ -327,8 +348,18 @@
                 lastPeakTimeRight = calcRes[1].newPeakTime;
                 rmsRight = calcRes[1].newRms;
 
+                if (maxDb1ch < dbLeft) maxDb1ch = dbLeft
+                if (maxDb2ch < dbRight) maxDb2ch = dbRight
+
+                if (maxRms1ch < rmsLeft) maxRms1ch = rmsLeft
+                if (maxRms2ch < rmsRight) maxRms2ch = rmsRight
+
                 sampleUpdating = false;
             });
+        }
+
+        function dbToStr(db) {
+            return db <= MIN_DB_VALUE ? '-INF' : db?.toFixed(2);
         }
 
         function animationFrame() {
@@ -337,19 +368,23 @@
             sampleLevels();
 
             // Peak info
-            peakDb1chElem.textContent = peakDbLeft <= MIN_DB_VALUE ? '-INF' : peakDbLeft.toFixed(2);
-            peakDb2chElem.textContent = peakDbRight <= MIN_DB_VALUE ? '-INF' : peakDbRight.toFixed(2);
+            peakDb1chElem.textContent = dbToStr(peakDbLeft);
+            peakDb2chElem.textContent = dbToStr(peakDbRight);
 
             // Peak level bar
             renderLevelBar(peakCanvas1chElem, peakCanvas1chCtx, dbLeft, peakDbLeft);
             renderLevelBar(peakCanvas2chElem, peakCanvas2chCtx, dbRight, peakDbRight);
+            maxDb1chElem.textContent = dbToStr(maxDb1ch);
+            maxDb2chElem.textContent = dbToStr(maxDb2ch);
 
             // RMS level bar
             renderRmsBar(rmsCanvas1chElem, rmsCanvas1chCtx, rmsLeft);
             renderRmsBar(rmsCanvas2chElem, rmsCanvas2chCtx, rmsRight);
-            rmsDb1chElem.textContent = rmsLeft <= MIN_DB_VALUE ? '-INF' : rmsLeft.toFixed(2);
-            rmsDb2chElem.textContent = rmsRight <= MIN_DB_VALUE ? '-INF' : rmsRight.toFixed(2);
+            rmsDb1chElem.textContent = dbToStr(rmsLeft);
+            rmsDb2chElem.textContent = dbToStr(rmsRight);
 
+            maxRms1chElem.textContent = dbToStr(maxRms1ch);
+            maxRms2chElem.textContent = dbToStr(maxRms2ch);
         }
 
         const LEVEL_BAR_MAX_DB = 0;
@@ -493,10 +528,10 @@
         window.addEventListener('resize', onResize);
 
         document.addEventListener('DOMContentLoaded', function() {
-            // kickoff first frame
-            animationFrame();
             // Initialize Canvas size
             onResize();
+            // kickoff first frame
+            animationFrame();
         });
     </script>
 </body>
