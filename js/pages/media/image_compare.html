@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Compare</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        canvas {
+            max-width: calc(100vw - 50px);
+            max-height: calc(100vh - 200px);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Image Compare</h1>
+        <hr />
+    </header>
+
+    <section>
+        <h2>Input</h2>
+        <div>
+            <label for="image1-input">Image 1:</label>
+            <input type="file" id="image1-input" accept="image/*">
+            <button onclick="imagePaste(img1Canvas)">Paste from clipboard</button>
+        </div>
+        <br />
+        <div>
+            <label for="image2-input">Image 2:</label>
+            <input type="file" id="image2-input" accept="image/*">
+            <button onclick="imagePaste(img2Canvas)">Paste from clipboard</button>
+        </div>
+    </section>
+    <section>
+        <h2>Metadata</h2>
+        <dl>
+            <dt>Image 1 Dimension</dt>
+            <dd id="img1-dim">-</dd>
+            <dt>Image 2 Dimension</dt>
+            <dd id="img2-dim">-</dd>
+        </dl>
+    </section>
+    <section>
+        <h2>Manual Compare</h2>
+        <div>
+        </div>
+        <div>
+            <canvas id="compare-canvas"></canvas><br />
+            <input type="range" min="0" max="1" step="0.0000001" value="0.5" id="compare-slider" />
+        </div>
+    </section>
+    <script>
+        const img1Canvas = document.createElement('canvas');
+        const img2Canvas = document.createElement('canvas');
+
+        img1Canvas.width = img2Canvas.width = 0;
+        img1Canvas.height = img2Canvas.height = 0;
+
+        const image1FileElem = document.getElementById('image1-input');
+        const image2FileElem = document.getElementById('image2-input');
+
+        const img1DimElem = document.getElementById('img1-dim');
+        const img2DimElem = document.getElementById('img2-dim');
+
+        const compareCanvas = document.getElementById('compare-canvas');
+        const compareSliderElem = document.getElementById('compare-slider');
+
+        function imagePaste(canvas) {
+            navigator.clipboard.read().then(data => {
+                for (const item of data) {
+                    if (item.types.includes('image/png')) {
+                        item.getType('image/png').then(blob => {
+                            const img = new Image();
+                            img.onload = () => {
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0);
+                                onChangeSlider();
+                            };
+                            img.src = URL.createObjectURL(blob);
+                        });
+                    }
+                }
+            }).catch(err => {
+                console.error('Failed to read clipboard contents: ', err);
+            });
+        }
+
+        function loadImage(blobUrl, canvas) {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                onChangeSlider();
+            };
+            img.src = blobUrl;
+        }
+
+        image1FileElem.addEventListener('change', function() {
+            const blobUrl = URL.createObjectURL(image1FileElem.files[0]);
+            loadImage(blobUrl, img1Canvas);
+        });
+
+        image2FileElem.addEventListener('change', function() {
+            const blobUrl = URL.createObjectURL(image2FileElem.files[0]);
+            loadImage(blobUrl, img2Canvas);
+        });
+
+        function preflightCheck() {
+            const image1Width = img1Canvas.width;
+            const image1Height = img1Canvas.height;
+
+            const image2Width = img2Canvas.width;
+            const image2Height = img2Canvas.height;
+
+            if (Math.min(image1Height, image2Width, image1Height, image2Height) === 0) {
+                return false;
+            }
+
+            img1DimElem.textContent = `${image1Width} x ${image1Height}`;
+            img2DimElem.textContent = `${image2Width} x ${image2Height}`;
+
+            const image1Aspect = image1Width / image1Height;
+            const image2Aspect = image2Width / image2Height;
+
+            if (image1Aspect !== image2Aspect) {
+                alert('Not same aspect ratio')
+                return false;
+            }
+
+            //if (image1Width !== image2Width || image1Height !== image2Height) {
+            //    alert('Not same size');
+            //    return false;
+            //}
+
+            return true;
+        }
+
+        function onChangeSlider() {
+            if (!preflightCheck()) {
+                return;
+            }
+
+            const ctx = compareCanvas.getContext('2d');
+            const width = Math.max(img1Canvas.width, img2Canvas.width);
+            const height = Math.max(img1Canvas.height, img2Canvas.height);
+
+            compareCanvas.width = width;
+            compareCanvas.height = height;
+            onResize();
+
+            const sliderValue = parseFloat(compareSliderElem.value);
+
+            const grandCanvasImage2StartX = Math.round(width * sliderValue);
+            const img1EndX = Math.round(img1Canvas.width * sliderValue);
+
+            ctx.clearRect(0, 0, width, height);
+            // Must specify end X (width).
+            ctx.drawImage(img1Canvas, 0, 0, img1EndX, img1Canvas.height, 0, 0, grandCanvasImage2StartX, height);
+
+            const img2StartX = Math.round(img2Canvas.width * sliderValue);
+
+            ctx.drawImage(img2Canvas, img2StartX, 0, img2Canvas.width, img2Canvas.height, grandCanvasImage2StartX, 0, width, height);
+        }
+
+        compareSliderElem.addEventListener('input', onChangeSlider);
+
+        function onResize() {
+            compareSliderElem.style.width = compareCanvas.clientWidth + 'px';
+        }
+
+        window.addEventListener('resize', onResize);
+    </script>
+</body>
+</html>
