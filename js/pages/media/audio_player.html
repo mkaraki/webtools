@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Audio Player</title>
+    <title>Audio Player / Tone Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         div.ib {
@@ -30,7 +30,7 @@
 </head>
 <body>
     <header>
-        <h1>Audio Player</h1>
+        <h1>Audio Player / Tone Generator</h1>
         <hr />
     </header>
     <div>
@@ -42,6 +42,29 @@
         <div>
             Display Media:
             <button id="input-display">Open Display Media</button>
+        </div>
+        <div>
+            Tone Generator:
+            <span>
+                <label for="tg-type">Wave: </label>
+                <select id="tg-type">
+                    <option value="sine">Sine</option>
+                    <option value="square">Square</option>
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="triangle">Triangle</option>
+                </select>
+            </span>
+            <span>
+                <label for="tg-freq">Freq: </label>
+                <input type="number" min="1" value="440" step="0.01" id="tg-freq" />
+                Hz
+            </span>
+            <span>
+                <label for="tg-detune">Detune: </label>
+                <input type="number" value="0" step="0.01" id="tg-detune" />
+                cents
+            </span>
+            <button id="tg-start">Start</button>
         </div>
     </div>
     <div>
@@ -119,6 +142,11 @@
         const inputDisplayElem = document.getElementById('input-display');
         const audioElem = document.getElementById('audio-elem');
 
+        const tgType = document.getElementById('tg-type');
+        const tgFreq = document.getElementById('tg-freq');
+        const tgDetune = document.getElementById('tg-detune');
+        const tgStart = document.getElementById('tg-start');
+
         const maxDb1chElem = document.getElementById('peak-db-ch1');
         const maxDb2chElem = document.getElementById('peak-db-ch2');
         const maxRms1chElem = document.getElementById('peak-rms-ch1');
@@ -166,6 +194,7 @@
         let mediaElementSourceNode = null;
         let currentObjectUrl = null;
         let isAudioOutputConnected = false;
+        let oscillator = null;
 
         function hearAudio() {
             if (!audioSourceNode || !audioCtx) return;
@@ -210,6 +239,31 @@
             connectAudioSource(audioCtx.createMediaStreamSource(stream));
 
             sampleRate = audioCtx.sampleRate;
+        }
+
+        function initAudioOscillatorSource() {
+            const osc = audioCtx.createOscillator();
+            oscillator = osc;
+
+            connectAudioSource(osc);
+
+            sampleRate = audioCtx.sampleRate;
+
+            osc.start();
+        }
+
+        function changeOscillatorConfiguration() {
+            if (oscillator === null || oscillator !== audioSourceNode) {
+                initAudioOscillatorSource();
+            }
+
+            const type = tgType.value;
+            const freq = parseFloat(tgFreq.value);
+            const detune = parseFloat(tgDetune.value);
+
+            oscillator.type = type;
+            oscillator.frequency.value = freq;
+            oscillator.detune.value = detune;
         }
 
         function initAudioEngine() {
@@ -651,6 +705,23 @@
             initAudioStreamSource(stream);
             muteAudio();
         });
+
+        async function tgOnChange() {
+            await ensureAudioEngine();
+
+            changeOscillatorConfiguration();
+        }
+
+        async function tgOnStart() {
+            await tgOnChange();
+
+            hearAudio();
+        }
+
+        tgType.addEventListener('input', tgOnChange);
+        tgFreq.addEventListener('input', tgOnChange);
+        tgDetune.addEventListener('input', tgOnChange);
+        tgStart.addEventListener('click', tgOnStart);
 
         function writeDbAxis(canvas, ctx) {
             [-60, -50, -40, -30, -24, -20, -16, -12, -9, -6, -3].forEach(function(db) {
