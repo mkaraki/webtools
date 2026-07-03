@@ -99,6 +99,8 @@
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
+        let suggestFileName = 'converted';
+
         function updateViaCanvasInfo() {
             const width = canvas.width;
             const height = canvas.height;
@@ -113,7 +115,8 @@
 
         imageInput.addEventListener('change', function (e) {
             const img = document.createElement('img');
-            const objectUrl = URL.createObjectURL(e.target.files[0]);
+            const file = e.target.files[0];
+            const objectUrl = URL.createObjectURL(file);
             img.addEventListener('load', function () {
                 URL.revokeObjectURL(objectUrl);
                 const width = img.naturalWidth !== 0 ? img.naturalWidth : img.width;
@@ -126,11 +129,16 @@
                 updateViaCanvasInfo();
             });
             img.src = objectUrl;
+
+            const fileName = file.name;
+            const fileNameWithoutExtension = fileName.split('.').slice(0, -1).join('.');
+            suggestFileName = fileNameWithoutExtension;
         });
 
         imagePaste.addEventListener('click', async function () {
             await pasteImageToCanvas(canvas);
             updateViaCanvasInfo();
+            suggestFileName = 'converted';
         })
 
         cvtProcessElem.addEventListener('click', async function () {
@@ -148,7 +156,7 @@
 
             cvtResElem.src = dataUrl;
             cvtDlElem.href = dataUrl;
-            cvtDlElem.download = `converted.${getImageExtension(mime)}`;
+            cvtDlElem.download = `${suggestFileName}.${getImageExtension(mime)}`;
 
             await loadBlobImageToCanvas(dataUrl, cvtResCanvas);
         });
