@@ -174,6 +174,20 @@
             let histB = Array(256).fill(0);
             let histA = Array(256).fill(0);
 
+            let maxR = -1;
+            let maxG = -1;
+            let maxB = -1;
+            let maxA = -1;
+            let minR = Number.MAX_SAFE_INTEGER;
+            let minG = Number.MAX_SAFE_INTEGER;
+            let minB = Number.MAX_SAFE_INTEGER;
+            let minA = Number.MAX_SAFE_INTEGER;
+
+            let sumR = 0;
+            let sumG = 0;
+            let sumB = 0;
+            let sumA = 0;
+
             const pixels = ctx.getImageData(0, 0, wid, hei, { colorSpace: 'srgb' }).data;
 
             for (let w = 0; w < wid; w++) {
@@ -190,8 +204,27 @@
                     histG[g]++;
                     histB[b]++;
                     histA[a]++;
+
+                    if (maxR < r) maxR = r;
+                    if (minR > r) minR = r;
+                    if (maxG < g) maxG = g;
+                    if (minG > g) minG = g;
+                    if (maxB < b) maxB = b;
+                    if (minB > b) minB = b;
+                    if (maxA < a) maxA = a;
+                    if (minA > a) minA = a;
+
+                    sumR += r;
+                    sumG += g;
+                    sumB += b;
+                    sumA += a;
                 }
             }
+
+            const avgR = sumR / size2d;
+            const avgG = sumG / size2d;
+            const avgB = sumB / size2d;
+            const avgA = sumA / size2d;
 
             console.log(histR, histG, histB, histA);
 
@@ -266,6 +299,13 @@
             advAnalysisResElem.appendChild(histGImg);
             advAnalysisResElem.appendChild(histBImg);
             advAnalysisResElem.appendChild(histAImg);
+
+            const rgbaValueInfoText = document.createElement('p');
+            rgbaValueInfoText.innerHTML = `R: min: ${minR}, max: ${maxR}, avg: ${avgR}<br/>
+            G: min: ${minG}, max: ${maxG}, avg: ${avgG}<br/>
+            B: min: ${minB}, max: ${maxB}, avg: ${avgB}<br/>
+            A: min: ${minA}, max: ${maxA}, avg: ${avgA}`;
+            advAnalysisResElem.appendChild(rgbaValueInfoText);
         });
 
         cvtCmpElem.addEventListener('click', function () {
