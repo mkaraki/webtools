@@ -10,7 +10,7 @@
     "test": "pnpm build && vitest run",
     "test:ci": "pnpm build && vitest run --coverage --reporter=junit --outputFile=test-report.junit.xml"
   },
-  "packageManager": "pnpm@11.0.9",
+  "packageManager": "pnpm@11.9.0",
   "type": "module",
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.7",

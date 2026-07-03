@@ -30,6 +30,7 @@
         <div>
             <label for="image-input">Input image</label>
             <input type="file" id="image-input" accept="image/*">
+            <button id="image-paste">Paste from clipboard</button>
         </div>
         <div>
             Preview:<br />
@@ -70,13 +71,17 @@
                 <img id="cvt-res" alt="Convert Result Image Preview" src="/assets/1dot-white.png" loading="lazy" />
             </div>
             <div>
+                <button id="cvt-cmp">Compare</button>
                 <a id="cvt-dl">Download</a>
             </div>
         </div>
     </div>
+    <script src="/dist/math.js"></script>
+    <script src="/dist/media/image_core.js"></script>
     <script>
         const imageInput = document.getElementById('image-input');
         const imagePreview = document.getElementById('image-preview');
+        const imagePaste = document.getElementById('image-paste');
 
         const imageDimElem = document.getElementById('image-dim');
         const imagePixelsElem = document.getElementById('image-pixels');
@@ -86,86 +91,49 @@
         const cvtQualityElem = document.getElementById('cvt-quality');
         const cvtProcessElem = document.getElementById('cvt-process');
         const cvtResElem = document.getElementById('cvt-res');
+        const cvtResCanvas = document.createElement('canvas');
+        const cvtResCanvasCtx = cvtResCanvas.getContext('2d');
         const cvtDlElem = document.getElementById('cvt-dl');
+        const cvtCmpElem = document.getElementById('cvt-cmp');
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        function gcd(a, b) {
-            a = Math.abs(a);
-            b = Math.abs(b);
-            while (b !== 0) {
-                const temp = b;
-                b = a % b;
-                a = temp;
-            }
-            return a;
-        }
+        function updateViaCanvasInfo() {
+            const width = canvas.width;
+            const height = canvas.height;
 
+            imageDimElem.textContent = `${width} x ${height}`;
+            imagePixelsElem.textContent = `${width * height}`;
 
-        function aspectDisplayFormatter(width, height) {
-            const ratio = width / height;
+            imageRatioElem.textContent = `${aspectDisplayFormatter(width, height)}`;
 
-            // Return well known (and non-safe) ratios
-            switch (ratio) {
-                case 1.6:
-                    return '16:10';
-                case 0.625:
-                    return '10:16';
-                case 1366/768:
-                    return 'approx. 16:9';
-                case 768/1366:
-                    return 'approx. 9:16';
-                case 2340/1080:
-                    return '19.5:9';
-                case 1080/2340:
-                    return '9:19.5';
-                case 7/3:
-                    return '21:9';
-                case 3/7:
-                    return '9:21';
-            }
-
-            const divisor = gcd(width, height);
-            let ratioW = width / divisor;
-            let ratioH = height / divisor;
-
-            return `${ratioW}:${ratioH}`;
+            imagePreview.src = canvas.toDataURL('image/png');
         }
 
         imageInput.addEventListener('change', function (e) {
-            const img = new Image();
-            img.src = URL.createObjectURL(e.target.files[0]);
-            img.onload = () => {
+            const img = document.createElement('img');
+            const objectUrl = URL.createObjectURL(e.target.files[0]);
+            img.addEventListener('load', function () {
+                URL.revokeObjectURL(objectUrl);
                 const width = img.naturalWidth !== 0 ? img.naturalWidth : img.width;
                 const height = img.naturalHeight !== 0 ? img.naturalHeight : img.height;
-                imageDimElem.textContent = `${width} x ${height}`;
-                imagePixelsElem.textContent = `${width * height}`;
-
-                imageRatioElem.textContent = `${aspectDisplayFormatter(width, height)}`;
 
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0);
 
-                imagePreview.src = canvas.toDataURL('image/png');
-            };
+                updateViaCanvasInfo();
+            });
+            img.src = objectUrl;
         });
 
-        function getImageExtension(mime) {
-            switch (mime.toLowerCase()) {
-                case 'image/jpeg':
-                    return 'jpg';
-                case 'image/png':
-                    return 'png';
-                case 'image/webp':
-                    return 'webp';
-                default:
-                    return 'bin';
-            }
-        }
+        imagePaste.addEventListener('click', async function () {
+            await pasteImageToCanvas(canvas);
+            updateViaCanvasInfo();
+        })
 
-        cvtProcessElem.addEventListener('click', function () {
+        cvtProcessElem.addEventListener('click', async function () {
             const mime = cvtTypeElem.value;
             const quality = parseFloat(cvtQualityElem.value);
 
@@ -173,22 +141,17 @@
 
             try {
                 dataUrl = canvas.toDataURL(mime, quality);
-            }
-            catch (e) {
+            } catch (e) {
                 alert(`Failed to conversion: ${e.message}`);
+                return;
             }
 
             cvtResElem.src = dataUrl;
             cvtDlElem.href = dataUrl;
             cvtDlElem.download = `converted.${getImageExtension(mime)}`;
-        });
 
-        function createCanvasWithSize(width, height) {
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            return canvas;
-        }
+            await loadBlobImageToCanvas(dataUrl, cvtResCanvas);
+        });
 
         function fillWhite(canvas, ctx) {
             const fillStyleBackup = ctx.fillStyle;
@@ -304,6 +267,29 @@
             advAnalysisResElem.appendChild(histBImg);
             advAnalysisResElem.appendChild(histAImg);
         });
+
+        cvtCmpElem.addEventListener('click', function () {
+            const popup = window.open("image_compare.html", "CmpPopup");
+
+            if (!popup) {
+                alert("Popup blocked");
+                return;
+            }
+
+            popup.onload = () => {
+                try {
+                    console.log(typeof popup.compareTwoCanvas);
+                    console.log(popup);
+                    if (typeof popup.compareTwoCanvas === "function") {
+                        popup.compareTwoCanvas(canvas, cvtResCanvas);
+                    } else {
+                        alert('Load err');
+                    }
+                } catch (err) {
+                    alert('Program err');
+                }
+            };
+        })
     </script>
 </body>
 </html>
