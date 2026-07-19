@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Grid</title>
+    <title>Checker board (GCD)</title>
     <link rel="stylesheet" href="/dist/hw/monitor-test-patterns-global.css" />
 </head>
 <body>
@@ -32,34 +32,53 @@
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = 'white';
-
             const gcdValue = gcd(canvas.width, canvas.height);
             const step = gcdValue >> resize;
 
-            ctx.fillText(`Canvas width: ${canvas.width}`, textBaseLeft, textBaseTop + 10);
-            ctx.fillText(`Canvas height: ${canvas.height}`, textBaseLeft, textBaseTop + 25);
-            ctx.fillText(`GCD: ${gcdValue}`, textBaseLeft, textBaseTop + 40);
-            ctx.fillText(`Grid Step: ${step}`, textBaseLeft, textBaseTop + 55);
-
             if (gcdValue === 1) {
                 ctx.fillStyle = 'red';
+
+                ctx.fillText(`Canvas width: ${canvas.width}`, textBaseLeft, textBaseTop + 10);
+                ctx.fillText(`Canvas height: ${canvas.height}`, textBaseLeft, textBaseTop + 25);
+                ctx.fillText(`GCD: ${gcdValue}`, textBaseLeft, textBaseTop + 40);
+                ctx.fillText(`Grid Step: ${step}`, textBaseLeft, textBaseTop + 55);
+
                 ctx.fillText('The width and height of the canvas are coprime,', textBaseLeft, textBaseTop + 90);
                 ctx.fillText('resulting in a grid step size of 1 pixel.', textBaseLeft, textBaseTop + 105);
                 ctx.fillText('Consider resizing the window to have a common factor.', textBaseLeft, textBaseTop + 120);
                 return;
             }
 
-            ctx.fillText('Left/Right arrow to change grid size.', textBaseLeft, textBaseTop + 90);
+            if (step <= 2) {
+                ctx.fillStyle = 'red';
+
+                ctx.fillText(`Canvas width: ${canvas.width}`, textBaseLeft, textBaseTop + 10);
+                ctx.fillText(`Canvas height: ${canvas.height}`, textBaseLeft, textBaseTop + 25);
+                ctx.fillText(`GCD: ${gcdValue}`, textBaseLeft, textBaseTop + 40);
+                ctx.fillText(`Grid Step: ${step}`, textBaseLeft, textBaseTop + 55);
+
+                ctx.fillText('The grid step is too small to create a checkerboard pattern.', textBaseLeft, textBaseTop + 90);
+                ctx.fillText('Consider resizing the window to have a larger common factor.', textBaseLeft, textBaseTop + 105);
+                return;
+            }
 
             for (let x = 0; x < canvas.width; x += step) {
                 for (let y = 0; y < canvas.height; y += step) {
-                    ctx.fillRect(x, y, step, 1);
-                    ctx.fillRect(x, y, 1, step);
-                    ctx.fillRect(x + step - 1, y, 1, step);
-                    ctx.fillRect(x, y + step - 1, step, 1);
+                    const colorBin = (((x / step) % 2) + ((y / step) % 2)) % 2;
+                    ctx.fillStyle = colorBin === 0 ? 'black' : 'white';
+
+                    ctx.fillRect(x, y, step, step);
                 }
             }
+
+            ctx.fillStyle = 'red';
+
+            ctx.fillText(`Canvas width: ${canvas.width}`, textBaseLeft, textBaseTop + 10);
+            ctx.fillText(`Canvas height: ${canvas.height}`, textBaseLeft, textBaseTop + 25);
+            ctx.fillText(`GCD: ${gcdValue}`, textBaseLeft, textBaseTop + 40);
+            ctx.fillText(`Grid Step: ${step}`, textBaseLeft, textBaseTop + 55);
+
+            ctx.fillText('Left/Right arrow to change grid size.', textBaseLeft, textBaseTop + 90);
         }
 
         setTimeout(draw, 0);
