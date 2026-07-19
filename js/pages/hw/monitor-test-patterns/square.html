@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Square</title>
+    <link rel="stylesheet" href="/dist/hw/monitor-test-patterns-global.css" />
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function draw() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'black';
+
+            const squareSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.8);
+            const x = Math.floor((canvas.width - squareSize) / 2);
+            const y = Math.floor((canvas.height - squareSize) / 2);
+
+            ctx.fillRect(x, y, squareSize, squareSize);
+            ctx.fillText(`Square x:${x} y:${y} size:${squareSize}x${squareSize}`, 5, 15);
+        }
+
+        setTimeout(draw, 0);
+        window.addEventListener('resize', function () {
+            setTimeout(draw, 0);
+        });
+    </script>
+</body>
+</html>

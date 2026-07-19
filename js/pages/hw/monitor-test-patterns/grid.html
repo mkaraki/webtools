@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grid</title>
+    <link rel="stylesheet" href="/dist/hw/monitor-test-patterns-global.css" />
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function gcd(a, b) {
+            while (b !== 0) {
+                const temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+        let lastResizeValue = 0;
+
+        const textBaseLeft = 100;
+        const textBaseTop = 100;
+
+        function draw(resize = 0) {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'white';
+
+            const gcdValue = gcd(canvas.width, canvas.height);
+            const step = gcdValue >> resize;
+
+            ctx.fillText(`Canvas width: ${canvas.width}`, textBaseLeft, textBaseTop + 10);
+            ctx.fillText(`Canvas height: ${canvas.height}`, textBaseLeft, textBaseTop + 25);
+            ctx.fillText(`GCD: ${gcdValue}`, textBaseLeft, textBaseTop + 40);
+            ctx.fillText(`Grid Step: ${step}`, textBaseLeft, textBaseTop + 55);
+
+            if (gcdValue === 1) {
+                ctx.fillStyle = 'red';
+                ctx.fillText('The width and height of the canvas are coprime,', textBaseLeft, textBaseTop + 90);
+                ctx.fillText('resulting in a grid step size of 1 pixel.', textBaseLeft, textBaseTop + 105);
+                ctx.fillText('Consider resizing the window to have a common factor for a more visible grid.', textBaseLeft, textBaseTop + 120);
+                return;
+            }
+
+            ctx.fillText('Left/Right arrow to change grid size.', textBaseLeft, textBaseTop + 115);
+
+            for (let x = 0; x < canvas.width; x += step) {
+                for (let y = 0; y < canvas.height; y += step) {
+                    ctx.fillRect(x, y, step, 1);
+                    ctx.fillRect(x, y, 1, step);
+                    ctx.fillRect(x + step - 1, y, 1, step);
+                    ctx.fillRect(x, y + step - 1, step, 1);
+                }
+            }
+        }
+
+        setTimeout(draw, 0);
+        window.addEventListener('resize', function () {
+            lastResizeValue = 0; // Reset
+            setTimeout(draw, 0);
+        });
+
+        window.onkeydown = function (e) {
+            if (e.key === 'ArrowLeft') {
+                lastResizeValue++;
+                setTimeout(() => draw(lastResizeValue), 0);
+            } else if (e.key === 'ArrowRight') {
+                lastResizeValue = Math.max(0, lastResizeValue - 1);
+                setTimeout(() => draw(lastResizeValue), 0);
+            }
+        };
+    </script>
+</body>
+</html>
