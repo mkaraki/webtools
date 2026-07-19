@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Square (Manual)</title>
+    <link rel="stylesheet" href="/dist/hw/monitor-test-patterns-global.css" />
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let canvasMinSize = 0;
+        let maxSquareSize = 0;
+        let squareSize = 0;
+
+        function adjustSize() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            canvasMinSize = Math.min(canvas.width, canvas.height);
+            maxSquareSize = canvasMinSize;
+            squareSize = Math.floor(maxSquareSize * 0.5);
+        }
+
+        function draw() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'black';
+
+            const x = Math.floor((canvas.width - squareSize) / 2);
+            const y = Math.floor((canvas.height - squareSize) / 2);
+
+            const perc = (squareSize / canvasMinSize) * 100;
+
+            ctx.fillRect(x, y, squareSize, squareSize);
+            ctx.fillText(`Square x:${x} y:${y} size:${squareSize}x${squareSize} (${perc}%)`, 5, 15);
+            ctx.fillText('Use Up/Down or Left/Right arrow keys to adjust square size.', 5, 30);
+            ctx.fillText('Up/Down to adjust size by 10 pixels, Left/Right to adjust by 1 pixel.', 5, 45);
+
+            ctx.fillStyle = 'white';
+        }
+
+        adjustSize();
+        setTimeout(draw, 0);
+        window.addEventListener('resize', function () {
+            adjustSize();
+            setTimeout(draw, 0);
+        });
+
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowUp') {
+                squareSize = Math.min(squareSize + 10, maxSquareSize);
+                draw();
+            } else if (event.key === 'ArrowDown') {
+                squareSize = Math.max(squareSize - 10, 10);
+                draw();
+            } else if (event.key === 'ArrowRight') {
+                squareSize = Math.min(squareSize + 1, maxSquareSize);
+                draw();
+            } else if (event.key === 'ArrowLeft') {
+                squareSize = Math.max(squareSize - 1, 10);
+                draw();
+            }
+        });
+    </script>
+</body>
+</html>

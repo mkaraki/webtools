@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FPS Visual Test</title>
+    <link rel="stylesheet" href="/dist/hw/monitor-test-patterns-global.css" />
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let lastFrameTime = performance.now();
+        let maxX = 0;
+
+        const rectSizeHeight = 100;
+        const rectSizeWidth = 100;
+        const rectMargin = 70;
+
+        const textLeft = 5;
+
+        function resize() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            maxX = canvas.width - rectSizeWidth;
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        let fpsSimAccum = {
+            120: 0,
+            60: 0,
+            30: 0,
+            24: 0
+        };
+
+        let fpsSimLastFrameTime = {
+            120: performance.now(),
+            60: performance.now(),
+            30: performance.now(),
+            24: performance.now()
+        };
+
+        const FPS = {
+            120: 1/120,
+            60: 1/60,
+            30: 1/30,
+            24: 1/24
+        };
+
+        let objectInfo = {
+            x: 0,
+            direction: 0, // 0 = right, 1 = left
+        };
+
+        let bounceObjects = [
+            { name: 'Native' , step: 1 },
+            { name: '120 FPS', fps: 120, step: 1 },
+            { name: '60 FPS' , fps: 60, step: 1 },
+            { name: '30 FPS' , fps: 30, step: 1 },
+            { name: '24 FPS' , fps: 24, step: 1 },
+        ];
+
+        let counter = 0;
+
+        function draw() {
+            const now = performance.now();
+            const deltaTime = now - lastFrameTime;
+            lastFrameTime = now;
+
+            counter++;
+
+            const accumTime = deltaTime / 1000;
+            fpsSimAccum[120] += accumTime;
+            fpsSimAccum[60] += accumTime;
+            fpsSimAccum[30] += accumTime;
+            fpsSimAccum[24] += accumTime;
+
+            const moveBasicAmount = (deltaTime / 1000) * 300; // Move at 300 pixels per second
+
+            // Get fps
+            const fps = 1000 / deltaTime;
+
+            // Move the object
+            if (objectInfo.direction === 0) {
+                objectInfo.x += moveBasicAmount;
+                if (objectInfo.x >= maxX) {
+                    objectInfo.direction = 1;
+                }
+            } else {
+                objectInfo.x -= moveBasicAmount;
+                if (objectInfo.x <= 0) {
+                    objectInfo.direction = 0;
+                }
+            }
+
+            // Draw the object
+            for (let i = 0; i < bounceObjects.length; i++) {
+                const obj = bounceObjects[i];
+
+                if (obj.fps) {
+                    if (obj.fps === 120 && fpsSimAccum[120] < FPS[120]) {
+                        continue;
+                    } else if (obj.fps === 60 && fpsSimAccum[60] < FPS[60]) {
+                        continue;
+                    } else if (obj.fps === 30 && fpsSimAccum[30] < FPS[30]) {
+                        continue;
+                    } else if (obj.fps === 24 && fpsSimAccum[24] < FPS[24]) {
+                        continue;
+                    }
+                }
+
+                if (counter % obj.step !== 0) {
+                    continue;
+                }
+
+                const objTopLeftY = 50 + i * (rectSizeHeight + rectMargin);
+                const objTotalHeight = rectSizeHeight + rectMargin;
+
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, objTopLeftY, canvas.width, objTotalHeight);
+
+                ctx.fillStyle = 'black';
+
+                ctx.fillRect(objectInfo.x, objTopLeftY, rectSizeWidth, rectSizeHeight);
+
+                ctx.fillText(`Object[${i}]: ${obj.name}, x:${objectInfo.x}`, textLeft, objTopLeftY + rectSizeHeight + 20);
+
+                if (obj.fps) {
+                    const simulatedDelta = now - fpsSimLastFrameTime[obj.fps];
+                    const simulatedFps = 1000 / simulatedDelta;
+                    ctx.fillText(`Simulated FPS: ${simulatedFps.toFixed(2)}, delta: ${simulatedDelta.toFixed(2)} ms`, textLeft, objTopLeftY + rectSizeHeight + 35);
+
+                    // Reset accumulation and last frame time for the next frame
+                    if (obj.fps === 120) {
+                        fpsSimAccum[120] = 0;
+                        fpsSimLastFrameTime[120] = now;
+                    } else if (obj.fps === 60) {
+                        fpsSimAccum[60] = 0;
+                        fpsSimLastFrameTime[60] = now;
+                    } else if (obj.fps === 30) {
+                        fpsSimAccum[30] = 0;
+                        fpsSimLastFrameTime[30] = now;
+                    } else if (obj.fps === 24) {
+                        fpsSimAccum[24] = 0;
+                        fpsSimLastFrameTime[24] = now;
+                    }
+                } else if (obj.step === 1) {
+                    ctx.fillText(`FPS: ${fps.toFixed(2)}, delta: ${deltaTime.toFixed(2)} ms`, textLeft, objTopLeftY + rectSizeHeight + 35);
+                } else {
+                    const simulatedFps = fps / obj.step;
+                    ctx.fillText(`FPS: ${simulatedFps.toFixed(2)}`, textLeft, objTopLeftY + rectSizeHeight + 35);
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        setTimeout(function () {
+            resize();
+            draw();
+        }, 0);
+        window.addEventListener('resize', function () {
+            setTimeout(resize, 0);
+        });
+    </script>
+</body>
+</html>
