@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Screen Border</title>
+    <link rel="stylesheet" href="/dist/hw/monitor-test-patterns-global.css" />
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function lineLeftUpToRightDown(x, y, length) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + length, y + length);
+            ctx.stroke();
+        }
+
+        function lineLeftDownToRightUp(x, y, length) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + length);
+            ctx.lineTo(x + length, y);
+            ctx.stroke();
+        }
+
+        function drawEdgeArrow(x, y, direction) {
+            switch (direction) {
+                case 'left-up':
+                    ctx.fillRect(x, y, 30, 1);
+                    ctx.fillRect(x, y, 1, 30);
+                    lineLeftUpToRightDown(x, y, 30);
+                    break;
+                case 'right-up':
+                    ctx.fillRect(x, y, 30, 1);
+                    ctx.fillRect(x + 29, y, 1, 30);
+                    lineLeftDownToRightUp(x, y, 30);
+                    break;
+                case 'left-down':
+                    ctx.fillRect(x, y + 29, 30, 1);
+                    ctx.fillRect(x, y, 1, 30);
+                    lineLeftDownToRightUp(x, y, 30);
+                    break;
+                case 'right-down':
+                    ctx.fillRect(x, y + 29, 30, 1);
+                    ctx.fillRect(x + 29, y, 1, 30);
+                    lineLeftUpToRightDown(x, y, 30);
+                    break;
+            }
+        }
+
+        function drawArrow(x, y, direction) {
+            ctx.beginPath();
+            switch (direction) {
+                case 'up':
+                    ctx.moveTo(x, y + 15);
+                    ctx.lineTo(x + 15, y);
+
+                    ctx.moveTo(x + 30, y + 15);
+                    ctx.lineTo(x + 15, y);
+
+                    ctx.moveTo(x + 15, y);
+                    ctx.lineTo(x + 15, y + 30);
+                    break;
+                case 'down':
+                    ctx.moveTo(x, y + 15);
+                    ctx.lineTo(x + 15, y + 30);
+
+                    ctx.moveTo(x + 30, y + 15);
+                    ctx.lineTo(x + 15, y + 30);
+
+                    ctx.moveTo(x + 15, y);
+                    ctx.lineTo(x + 15, y + 30);
+                    break;
+                case 'left':
+                    ctx.moveTo(x + 15, y);
+                    ctx.lineTo(x, y + 15);
+
+                    ctx.moveTo(x + 15, y + 30);
+                    ctx.lineTo(x, y + 15);
+
+                    ctx.moveTo(x, y + 15);
+                    ctx.lineTo(x + 30, y + 15);
+                    break;
+                case 'right':
+                    ctx.moveTo(x + 15, y);
+                    ctx.lineTo(x + 30, y + 15);
+
+                    ctx.moveTo(x + 15, y + 30);
+                    ctx.lineTo(x + 30, y + 15);
+
+                    ctx.moveTo(x, y + 15);
+                    ctx.lineTo(x + 30, y + 15);
+                    break;
+            }
+
+            ctx.stroke();
+        }
+
+        function draw() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'black';
+            ctx.strokeStyle = 'black';
+
+            drawEdgeArrow(0, 0, 'left-up');
+            drawEdgeArrow(canvas.width - 30, 0, 'right-up');
+            drawEdgeArrow(0, canvas.height - 30, 'left-down');
+            drawEdgeArrow(canvas.width - 30, canvas.height - 30, 'right-down');
+
+            // Up arrows
+            for (let x = 60; x < canvas.width - 60; x += 60) {
+                drawArrow(x, 0, 'up');
+            }
+
+            // Down arrows
+            for (let x = 60; x < canvas.width - 60; x += 60) {
+                drawArrow(x, canvas.height - 30, 'down');
+            }
+
+            // Left arrows
+            for (let y = 60; y < canvas.height - 60; y += 60) {
+                drawArrow(0, y, 'left');
+            }
+
+            // Right arrows
+            for (let y = 60; y < canvas.height - 60; y += 60) {
+                drawArrow(canvas.width - 30, y, 'right');
+            }
+
+            // Center Cross
+            lineLeftUpToRightDown(canvas.width / 2 - 15, canvas.height / 2 - 15, 30);
+            lineLeftDownToRightUp(canvas.width / 2 - 15, canvas.height / 2 - 15, 30);
+        }
+
+        setTimeout(draw, 0);
+        window.addEventListener('resize', function () {
+            setTimeout(draw, 0);
+        });
+    </script>
+</body>
+</html>
