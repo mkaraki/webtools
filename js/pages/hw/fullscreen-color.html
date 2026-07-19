@@ -23,10 +23,10 @@
         }
 
         button {
-            margin-left: 1em;
+            margin-left: 0.5em;
         }
         div {
-            margin-top: 1em;
+            margin-top: 0.5em;
         }
     </style>
 </head>
@@ -39,10 +39,18 @@
     <div>
         <button id="btn-white">White</button>
         <button id="btn-black">Black</button>
+    </div>
+    <div>
         <button id="btn-red">Red</button>
         <button id="btn-green">Green</button>
         <button id="btn-blue">Blue</button>
     </div>
+    <div>
+        <button id="btn-cyan-rgb">Cyan (RGB)</button>
+        <button id="btn-magenta-rgb">Magenta (RGB)</button>
+        <button id="btn-yellow-rgb">Yellow (RGB)</button>
+    </div>
+    <br />
     <div>
         <button id="btn-fullscreen">Fullscreen</button>
         <button id="btn-hide">Hide This (Type any key to revert)</button>
@@ -76,6 +84,18 @@
 
     document.querySelector('#btn-blue').addEventListener('click', () => {
         setColor('#0000ff');
+    });
+
+    document.querySelector('#btn-cyan-rgb').addEventListener('click', () => {
+        setColor('#00ffff');
+    });
+
+    document.querySelector('#btn-magenta-rgb').addEventListener('click', () => {
+        setColor('#ff00ff');
+    });
+
+    document.querySelector('#btn-yellow-rgb').addEventListener('click', () => {
+        setColor('#ffff00');
     });
 
     document.querySelector('#btn-fullscreen').addEventListener('click', () => {
