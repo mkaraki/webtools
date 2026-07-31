@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multichannel Audio Tester</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .virt-form > div {
+            margin-bottom: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Multichannel Audio Tester</h1>
+        <hr />
+    </header>
+    <main>
+        <section>
+            <h2>Initialize</h2>
+            <div class="virt-form">
+                <div>
+                    <label for="channel-amount">Channels: </label>
+                    <input type="number" id="channel-amount" min="1" value="2">
+                </div>
+                <div>
+                    <button id="init">Initialize</button>
+                </div>
+            </div>
+        </section>
+        <section>
+            <h2>Control</h2>
+            <div class="virt-form">
+                <div>
+                    <label for="osc-freq">Oscillator Frequency: </label>
+                    <input type="number" id="osc-freq" min="0" value="440">
+                    <button id="set-osc-freq">Set Frequency</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Channel Id</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="control-table"></tbody>
+            </table>
+        </section>
+    </main>
+    <script>
+        const channelAmountElem = document.getElementById('channel-amount');
+        const initElem = document.getElementById('init');
+
+        const oscFreqElem = document.getElementById('osc-freq');
+        const setOscFreqElem = document.getElementById('set-osc-freq');
+
+        const controlTableElem = document.getElementById('control-table');
+
+        let audioContext = null;
+        let channelMerger = null;
+        let oscillators = [];
+        let whiteNoises = [];
+
+        function destroy() {
+            if (audioContext === null) return; // Already destroyed
+
+            controlTableElem.innerHTML = '';
+
+            for (let i = 0; i < oscillators.length; i++) {
+                try {
+                    oscillators[i].stop();
+                    oscillators[i].disconnect(channelMerger);
+                } catch {}
+            }
+            oscillators = [];
+            for (let i = 0; i < whiteNoises.length; i++) {
+                try {
+                    whiteNoises[i].stop();
+                    whiteNoises[i].disconnect(channelMerger);
+                } catch {}
+            }
+            whiteNoises = [];
+
+            channelMerger.disconnect(audioContext);
+            channelMerger = null;
+
+            audioContext.close();
+            audioContext = null;
+        }
+
+        initElem.addEventListener('click', function () {
+            destroy();
+
+            audioContext = new window.AudioContext();
+            const channelAmount = parseInt(channelAmountElem.value);
+
+            audioContext.destination.channelCountMode = "explicit";
+            audioContext.destination.channelInterpretation = 'discrete'; // Prevents auto-panning/mixing
+            try {
+                audioContext.destination.channelCount = channelAmount;
+            } catch (/*IndexSizeError*/ e) {
+                alert("Channel configuration error: " + e.message);
+                return;
+            }
+
+            channelMerger = audioContext.createChannelMerger(channelAmount);
+            channelMerger.connect(audioContext.destination);
+
+            for (let i = 0; i < channelAmount; i++) {
+                const oscillator = audioContext.createOscillator();
+                oscillator.start();
+                oscillator.frequency.value = parseInt(oscFreqElem.value);
+                oscillators.push(oscillator);
+            }
+
+            const whiteNoiseBufferSize = audioContext.sampleRate;
+            const whiteNoiseBuffer = audioContext.createBuffer(1, whiteNoiseBufferSize, audioContext.sampleRate);
+            const whiteNoiseData = whiteNoiseBuffer.getChannelData(0);
+            for (let i = 0; i < whiteNoiseData.length; i++) {
+                whiteNoiseData[i] = Math.random() * 2 - 1;
+            }
+
+            for (let i = 0; i < channelAmount; i++) {
+                const whiteNoise = audioContext.createBufferSource();
+                whiteNoise.buffer = whiteNoiseBuffer;
+                whiteNoise.loop = true;
+                whiteNoise.start();
+                whiteNoises.push(whiteNoise);
+            }
+
+            for (let i = 0; i < channelAmount; i++) {
+                const row = document.createElement('tr');
+                const channelIdCell = document.createElement('td');
+                channelIdCell.textContent = `Channel ${i + 1}`;
+                row.appendChild(channelIdCell);
+                controlTableElem.appendChild(row);
+
+                const actionsCell = document.createElement('td');
+                const oscStartButton = document.createElement('button');
+                oscStartButton.textContent = 'OSC Start';
+                oscStartButton.addEventListener('click', function () {
+                    oscillators[i].connect(channelMerger, 0, i);
+                });
+                const oscStopButton = document.createElement('button');
+                oscStopButton.textContent = 'OSC Stop';
+                oscStopButton.addEventListener('click', function () {
+                    oscillators[i].disconnect(channelMerger);
+                });
+
+                const whiteNoiseStartButton = document.createElement('button');
+                whiteNoiseStartButton.textContent = 'White Noise Start';
+                whiteNoiseStartButton.addEventListener('click', function () {
+                    whiteNoises[i].connect(channelMerger, 0, i);
+                });
+                const whiteNoiseStopButton = document.createElement('button');
+                whiteNoiseStopButton.textContent = 'White Noise Stop';
+                whiteNoiseStopButton.addEventListener('click', function () {
+                    whiteNoises[i].disconnect(channelMerger);
+                });
+
+                actionsCell.appendChild(oscStartButton);
+                actionsCell.appendChild(oscStopButton);
+                actionsCell.appendChild(whiteNoiseStartButton);
+                actionsCell.appendChild(whiteNoiseStopButton);
+                row.appendChild(actionsCell);
+            }
+        });
+
+        setOscFreqElem.addEventListener('click', function () {
+            const freq = parseInt(oscFreqElem.value);
+            for (let i = 0; i < oscillators.length; i++) {
+                oscillators[i].frequency.value = freq;
+            }
+        });
+    </script>
+</body>
+</html>
