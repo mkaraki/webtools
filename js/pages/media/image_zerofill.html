@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Bit Zero filler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        img {
+            max-height: 70vh;
+            max-width: 100vw;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Image Bit Zero filler</h1>
+        <hr />
+    </header>
+    <section>
+        <h2>Input</h2>
+        <label for="image-input">Input image</label>
+        <input type="file" id="image-input" accept="image/*">
+        <button id="image-paste">Paste from clipboard</button>
+    </section>
+    <section>
+        <h2>Processor</h2>
+        <ul>
+            <li>
+                Fill <input type="number" id="proc-red-zero-fill" value="0" min="0" /> bits of LSB with zero for Red<br />
+                (<code>image[pixelIdx][0] = image[pixelIdx][0] >> bits << bits</code>)
+            </li>
+            <li>
+                Fill <input type="number" id="proc-green-zero-fill" value="0" min="0" /> bits of LSB with zero for Green<br />
+                (<code>image[pixelIdx][1] = image[pixelIdx][1] >> bits << bits</code>)
+            </li>
+            <li>
+                Fill <input type="number" id="proc-blue-zero-fill" value="0" min="0" /> bits of LSB with zero for Blue<br />
+                (<code>image[pixelIdx][2] = image[pixelIdx][2] >> bits << bits</code>)
+            </li>
+            <li>
+                Fill <input type="number" id="proc-alpha-zero-fill" value="0" min="0" /> bits of LSB with zero for Alpha<br />
+                (<code>image[pixelIdx][3] = image[pixelIdx][3] >> bits << bits</code>)
+            </li>
+        </ul>
+        <div>
+            <button id="proc-do">Re-process</button>
+        </div>
+    </section>
+    <section>
+        <h2>Output</h2>
+        <div>
+            <img id="image-preview" alt="Image Preview" src="/assets/1dot-white.png" loading="lazy">
+        </div>
+        <div>
+            <button id="image-cmp">Compare</button>
+            <a id="image-dl" download="output.png">Download</a>
+        </div>
+    </section>
+    <script src="/dist/media/image_core.js"></script>
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const imagePaste = document.getElementById('image-paste');
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const destCanvas = document.createElement('canvas');
+        const destCtx = destCanvas.getContext('2d');
+
+        const procRedZeroFill = document.getElementById('proc-red-zero-fill');
+        const procGreenZeroFill = document.getElementById('proc-green-zero-fill');
+        const procBlueZeroFill = document.getElementById('proc-blue-zero-fill');
+        const procAlphaZeroFill = document.getElementById('proc-alpha-zero-fill');
+        const procDo = document.getElementById('proc-do');
+
+        const imagePreview = document.getElementById('image-preview');
+        const imageCmp = document.getElementById('image-cmp');
+        const imageDl = document.getElementById('image-dl');
+
+        imageInput.addEventListener('change', function (e) {
+            const img = document.createElement('img');
+            const file = e.target.files[0];
+            const objectUrl = URL.createObjectURL(file);
+            img.addEventListener('load', function () {
+                URL.revokeObjectURL(objectUrl);
+                const width = img.naturalWidth !== 0 ? img.naturalWidth : img.width;
+                const height = img.naturalHeight !== 0 ? img.naturalHeight : img.height;
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0);
+
+                setTimeout(process, 0);
+            });
+            img.src = objectUrl;
+        });
+
+        imagePaste.addEventListener('click', async function () {
+            await pasteImageToCanvas(canvas);
+            setTimeout(process, 0);
+        })
+
+        imageCmp.addEventListener('click', function () {
+            const popup = window.open("image_compare.html", "CmpPopup");
+
+            if (!popup) {
+                alert("Popup blocked");
+                return;
+            }
+
+            popup.addEventListener('load', function () {
+                try {
+                    if (typeof popup.compareTwoCanvas === "function") {
+                        popup.compareTwoCanvas(canvas, destCanvas);
+                        console.debug('Queried compareTwoCanvas() in popup');
+                    } else {
+                        alert('Load err');
+                    }
+                } catch (err) {
+                    alert('Program err');
+                }
+            })
+        })
+
+        function process() {
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const clearRedBits = parseInt(procRedZeroFill?.value ?? '0');
+            const clearBlueBits = parseInt(procBlueZeroFill?.value ?? '0');
+            const clearGreenBits = parseInt(procGreenZeroFill?.value ?? '0');
+            const clearAlphaBits = parseInt(procAlphaZeroFill?.value ?? '0');
+
+            const doClearRedBits = clearRedBits > 0;
+            const doClearBlueBits = clearBlueBits > 0;
+            const doClearGreenBits = clearGreenBits > 0;
+            const doClearAlphaBits = clearAlphaBits > 0;
+
+            const imageData = ctx.getImageData(0, 0, width, height);
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const pixelIdx = (y * width + x) * 4;
+
+                    if (doClearRedBits) {
+                        imageData.data[pixelIdx] = imageData.data[pixelIdx] >> clearRedBits << clearRedBits;
+                    }
+                    if (doClearGreenBits) {
+                        imageData.data[pixelIdx + 1] = imageData.data[pixelIdx + 1] >> clearGreenBits << clearGreenBits;
+                    }
+                    if (doClearBlueBits) {
+                        imageData.data[pixelIdx + 2] = imageData.data[pixelIdx + 2] >> clearBlueBits << clearBlueBits;
+                    }
+                    if (doClearAlphaBits) {
+                        imageData.data[pixelIdx + 3] = imageData.data[pixelIdx + 3] >> clearAlphaBits << clearAlphaBits;
+                    }
+                }
+            }
+
+            destCanvas.width = width;
+            destCanvas.height = height;
+            destCtx.putImageData(imageData, 0, 0);
+
+            const dataUrl = destCanvas.toDataURL('image/png');
+            imagePreview.src = dataUrl;
+            imageDl.href = dataUrl;
+        }
+        procDo.addEventListener('click', process);
+    </script>
+</body>
+</html>

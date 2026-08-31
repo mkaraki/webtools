@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Bit Zero filler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        dd {
+            font-family: monospace;
+            font-size: 1.15em;
+            margin-bottom: 0.25em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Audio Bit Zero filler<!--/Steganographer--></h1>
+        <hr />
+    </header>
+    <section>
+        <h2>Input</h2>
+        <div>
+            <label for="input-file">Audio File: </label>
+            <input type="file" id="input-file" />
+        </div>
+        <!--<div>
+            <label for="input-embed-file">Embed File: </label>
+            <input type="file" id="input-embed-file" />
+        </div>-->
+        <dl id="input-result">
+            <dt>Status</dt>
+            <dd>No file selected</dd>
+        </dl>
+    </section>
+    <section>
+        <h2>Processor</h2>
+        <ol>
+            <li>Convert to float32 [-1,1] source</li>
+            <li>
+                Emulate <input type="number" id="proc-multiplier-of-bit" value="16" min="4"> bits integer sound<br />
+                (<code>data[sample] = Math.round(floatData[sample] * scale)</code>)
+            </li>
+            <li>
+                Fill <input type="number" id="proc-fill-zero-bit" value="0" min="0"> bits of LSB with zero<br />
+                (<code>data[sample] = data[sample] >> bits << bits</code>)
+            </li>
+            <!--<li>
+                Embed data to <input type="number" id="proc-embed-bit" value="0" min="0"> bits of LSB
+            </li>-->
+            <li>
+                Restore to float32 [-1,1] source<br />
+                (<code>floatData[sample] = data[sample] / scale</code>)
+            </li>
+        </ol>
+        <div>
+            <button id="proc-do">Re-process</button>
+        </div>
+        <section>
+            <h3>Process result</h3>
+            <dl id="proc-result">
+                <dt>Status</dt>
+                <dd>Not processed</dd>
+            </dl>
+        </section>
+        <section>
+            <h3>Equality check result</h3>
+            <dl id="equality-check-result"></dl>
+        </section>
+    </section>
+    <section>
+        <h2>Output Player</h2>
+        <div>
+            <label for="output-start-pos">Play from:</label>
+            <input type="number" id="output-start-pos" value="0" min="0" step="0.01" />/<span id="output-duration">Unknown</span>[sec]
+            <button id="output-play">Play</button>
+            <button id="output-stop">Stop</button>
+        </div>
+        <div>
+            <label for="output-volume">Volume</label>
+            <input type="range" id="output-volume" min="0" max="1" step="0.001" value="1" />
+        </div>
+        <section>
+            <h3>Recording (Export)</h3>
+            <button id="recording-do">Start Recording</button>
+            <div id="recording-result"></div>
+        </section>
+    </section>
+    <script>
+        const inputFile = document.getElementById('input-file');
+        const inputResult = document.getElementById('input-result');
+
+        //const inputEmbedFile = document.getElementById('input-embed-file');
+
+        const procMultiplierOfBit = document.getElementById('proc-multiplier-of-bit');
+        const procFillZeroBit = document.getElementById('proc-fill-zero-bit');
+        const procEmbedBit = document.getElementById('proc-embed-bit');
+        const procDo = document.getElementById('proc-do');
+
+        const procResult = document.getElementById('proc-result');
+        const equalityCheckResult = document.getElementById('equality-check-result');
+
+        const outputStartPos = document.getElementById('output-start-pos');
+        const outputDuration = document.getElementById('output-duration');
+        const outputPlay = document.getElementById('output-play');
+        const outputStop = document.getElementById('output-stop');
+        const outputVolume = document.getElementById('output-volume');
+
+        const recordingDo = document.getElementById('recording-do');
+        const recordingResult = document.getElementById('recording-result');
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+
+        let audioBuffer = null;
+
+        let embedDataBytes = null;
+
+        let source = null;
+
+        let sourceStats = {
+            minValues: [],
+            maxValues: [],
+            avgValues: []
+        };
+
+        let lastResult = null;
+
+        function process() {
+            if (audioBuffer === null) {
+                return;
+            }
+
+            procResult.innerHTML = '<dt>Status</dt><dd>Processing...</dd>';
+            equalityCheckResult.innerHTML = '';
+
+            // Retrieve processing parameters
+            const multiplierBits = parseFloat(procMultiplierOfBit?.value ?? '32');
+            const fillZeroBit = parseInt(procFillZeroBit?.value ?? '0');
+            const embedBit = parseInt(procEmbedBit?.value ?? '0');
+            const doZerofill = fillZeroBit !== 0;
+            const doEmbed = embedBit !== 0 && embedDataBytes !== null;
+
+            if (isNaN(multiplierBits) || isNaN(fillZeroBit) || isNaN(embedBit)) {
+                alert('Invalid input values');
+                return;
+            }
+
+            const scale = 2 ** (multiplierBits - 1) - 1;
+
+            // Process
+            setTimeout(function () {
+                // Prepare processing
+                const channels = audioBuffer.numberOfChannels;
+                const length = audioBuffer.length;
+                const sampleRate = audioBuffer.sampleRate;
+                const processedBuffer = audioContext.createBuffer(channels, length, sampleRate);
+
+                const minValues = new Array(channels).fill(Number.POSITIVE_INFINITY);
+                const maxValues = new Array(channels).fill(Number.NEGATIVE_INFINITY);
+                const avgValues = new Array(channels).fill(0);
+
+                for (let c = 0; c < channels; c++) {
+                    let minValue = Number.POSITIVE_INFINITY;
+                    let maxValue = Number.NEGATIVE_INFINITY;
+                    let sumValue = 0;
+
+                    const channelData = audioBuffer.getChannelData(c);
+                    const processedChannelData = processedBuffer.getChannelData(c);
+                    for (let i = 0; i < length; i++) {
+                        // Prepare integer-like data from float32 [-1,1] source
+                        let sample = channelData[i] * scale;
+                        sample = Math.round(sample);
+
+                        // Zero-fill
+                        if (doZerofill) {
+                            sample = sample >> fillZeroBit << fillZeroBit;
+                        }
+
+                        // Calc Stats
+                        if (sample < minValue) {
+                            minValue = sample;
+                        }
+                        if (sample > maxValue) {
+                            maxValue = sample;
+                        }
+                        sumValue += sample;
+
+                        // Restore to float32 [-1,1] source
+                        processedChannelData[i] = sample / scale;
+                    }
+                    processedBuffer.copyToChannel(processedChannelData, c);
+
+                    minValues[c] = minValue;
+                    maxValues[c] = maxValue;
+                    avgValues[c] = sumValue / length;
+                }
+
+                procResult.innerHTML = '<dt>Status</dt><dd>Ended</dd>';
+
+                const dtScale = document.createElement('dt');
+                dtScale.textContent = 'Scale';
+                const ddScale = document.createElement('dd');
+                ddScale.textContent = `${scale}`;
+                procResult.appendChild(dtScale);
+                procResult.appendChild(ddScale);
+
+                for (let c = 0; c < channels; c++) {
+                    const dtMinValue = document.createElement('dt');
+                    dtMinValue.textContent = `Channel ${c} Min Value`;
+                    const ddMinValue = document.createElement('dd');
+                    const floatConvertedMinValue = minValues[c] / scale;
+                    ddMinValue.textContent = `${minValues[c]} (${floatConvertedMinValue})`;
+                    const dtMaxValue = document.createElement('dt');
+                    dtMaxValue.textContent = `Channel ${c} Max Value`;
+                    const ddMaxValue = document.createElement('dd');
+                    const floatConvertedMaxValue = maxValues[c] / scale;
+                    ddMaxValue.textContent = `${maxValues[c]} (${floatConvertedMaxValue})`;
+                    const dtAvgValue = document.createElement('dt');
+                    dtAvgValue.textContent = `Channel ${c} Avg Value`;
+                    const ddAvgValue = document.createElement('dd');
+                    const floatConvertedAvgValue = avgValues[c] / scale;
+                    ddAvgValue.textContent = `${avgValues[c].toFixed(6)} (${floatConvertedAvgValue})`;
+
+                    procResult.appendChild(dtMinValue);
+                    procResult.appendChild(ddMinValue);
+                    procResult.appendChild(dtMaxValue);
+                    procResult.appendChild(ddMaxValue);
+                    procResult.appendChild(dtAvgValue);
+                    procResult.appendChild(ddAvgValue);
+
+                    const minDiff = floatConvertedMinValue - sourceStats.minValues[c];
+                    const maxDiff = floatConvertedMaxValue - sourceStats.maxValues[c];
+                    const avgDiff = floatConvertedAvgValue - sourceStats.avgValues[c];
+                    const dtMinDiff = document.createElement('dt');
+                    dtMinDiff.textContent = `Channel ${c} Min Value Diff (processed - source)`;
+                    const ddMinDiff = document.createElement('dd');
+                    ddMinDiff.textContent = `${minDiff.toFixed(12)} (${(minDiff * scale).toFixed(6)} / ${scale})`;
+                    const dtMaxDiff = document.createElement('dt');
+                    dtMaxDiff.textContent = `Channel ${c} Max Value Diff (processed - source)`;
+                    const ddMaxDiff = document.createElement('dd');
+                    ddMaxDiff.textContent = `${maxDiff.toFixed(12)} (${(maxDiff * scale).toFixed(6)} / ${scale})`;
+                    const dtAvgDiff = document.createElement('dt');
+                    dtAvgDiff.textContent = `Channel ${c} Avg Value Diff (processed - source)`;
+                    const ddAvgDiff = document.createElement('dd');
+                    ddAvgDiff.textContent = `${avgDiff.toFixed(12)} (${(avgDiff * scale).toFixed(6)} / ${scale})`;
+
+                    equalityCheckResult.appendChild(dtMinDiff);
+                    equalityCheckResult.appendChild(ddMinDiff);
+                    equalityCheckResult.appendChild(dtMaxDiff);
+                    equalityCheckResult.appendChild(ddMaxDiff);
+                    equalityCheckResult.appendChild(dtAvgDiff);
+                    equalityCheckResult.appendChild(ddAvgDiff);
+                }
+
+                lastResult = processedBuffer;
+                preparePlayer(processedBuffer);
+            }, 0);
+        }
+
+        procDo.addEventListener('click', process);
+
+        function preparePlayer(playbackBuffer) {
+            if (source !== null) {
+                source.disconnect();
+            }
+            source = new AudioBufferSourceNode(audioContext);
+            source.connect(gainNode);
+            source.buffer = playbackBuffer;
+            source.addEventListener('ended', function () {
+                console.log('Playback ended. Resetting source state.');
+                preparePlayer(playbackBuffer);
+            });
+
+            outputStartPos.value = Math.min(outputStartPos.value, playbackBuffer.duration);
+            outputDuration.textContent = playbackBuffer.duration.toFixed(2);
+        }
+
+        outputPlay.addEventListener('click', function () {
+            if (audioBuffer === null) {
+                return;
+            }
+
+            const startPos = parseFloat(outputStartPos.value);
+            if (isNaN(startPos) || startPos < 0 || startPos >= audioBuffer.duration) {
+                alert('Invalid start position');
+                return;
+            }
+
+            source.start(0, startPos);
+        });
+
+        outputStop.addEventListener('click', function () {
+            source.stop();
+        });
+
+        outputVolume.addEventListener('input', function () {
+            const volume = parseFloat(outputVolume?.value ?? '1');
+            if (isNaN(volume) || volume < 0 || volume > 1) {
+                return;
+            }
+            gainNode.gain.value = volume;
+        });
+
+        inputFile.addEventListener('change', async function () {
+            if (inputFile.files.length !== 1) {
+                return;
+            }
+
+            inputResult.innerHTML = '<dt>Status</dt><dd>Decoding...</dd>';
+
+            const file = inputFile.files[0];
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+            inputResult.innerHTML = '<dt>Status</dt><dd>Analyzing...</dd>';
+
+            // Get audio stats
+            const channels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const duration = audioBuffer.duration;
+            const length = audioBuffer.length;
+
+            const dtStatus = document.createElement('dt');
+            dtStatus.textContent = 'Status';
+            const ddStatus = document.createElement('dd');
+            ddStatus.textContent = `Loaded`;
+
+            const dtChannels = document.createElement('dt');
+            dtChannels.textContent = 'Channels';
+            const ddChannels = document.createElement('dd');
+            ddChannels.textContent = `${channels}`;
+            const dtSampleRate = document.createElement('dt');
+            dtSampleRate.textContent = 'Sample Rate';
+            const ddSampleRate = document.createElement('dd');
+            ddSampleRate.textContent = `${sampleRate} Hz`;
+            const dtDuration = document.createElement('dt');
+            dtDuration.textContent = 'Duration';
+            const ddDuration = document.createElement('dd');
+            ddDuration.textContent = `${duration.toFixed(2)} seconds`;
+            const dtLength = document.createElement('dt');
+            dtLength.textContent = 'Length';
+            const ddLength = document.createElement('dd');
+            ddLength.textContent = `${length} samples`;
+
+            inputResult.innerHTML = '';
+            inputResult.appendChild(dtStatus);
+            inputResult.appendChild(ddStatus);
+            inputResult.appendChild(dtChannels);
+            inputResult.appendChild(ddChannels);
+            inputResult.appendChild(dtSampleRate);
+            inputResult.appendChild(ddSampleRate);
+            inputResult.appendChild(dtDuration);
+            inputResult.appendChild(ddDuration);
+            inputResult.appendChild(dtLength);
+            inputResult.appendChild(ddLength);
+
+            sourceStats.minValues = new Array(channels).fill(Number.POSITIVE_INFINITY);
+            sourceStats.maxValues = new Array(channels).fill(Number.NEGATIVE_INFINITY);
+            sourceStats.avgValues = new Array(channels).fill(0);
+
+            for (let i = 0; i < channels; i++) {
+                const channelData = audioBuffer.getChannelData(i);
+                let zeroCount = 0;
+                let minValue = Number.POSITIVE_INFINITY;
+                let maxValue = Number.NEGATIVE_INFINITY;
+                let sumValue = 0;
+                for (let j = 0; j < channelData.length; j++) {
+                    if (channelData[j] === 0) {
+                        zeroCount++;
+                    }
+                    minValue = Math.min(minValue, channelData[j]);
+                    maxValue = Math.max(maxValue, channelData[j]);
+                    sumValue += channelData[j];
+                }
+                const avgValue = sumValue / channelData.length;
+
+                sourceStats.minValues[i] = minValue;
+                sourceStats.maxValues[i] = maxValue;
+                sourceStats.avgValues[i] = avgValue;
+
+                const dtZeroCount = document.createElement('dt');
+                dtZeroCount.textContent = `Channel ${i} Zero Count`;
+                const ddZeroCount = document.createElement('dd');
+                ddZeroCount.textContent = `${zeroCount}`;
+
+                inputResult.appendChild(dtZeroCount);
+                inputResult.appendChild(ddZeroCount);
+
+                const dtMinValue = document.createElement('dt');
+                dtMinValue.textContent = `Channel ${i} Min Value`;
+                const ddMinValue = document.createElement('dd');
+                ddMinValue.textContent = `${minValue}`;
+                const dtMaxValue = document.createElement('dt');
+                dtMaxValue.textContent = `Channel ${i} Max Value`;
+                const ddMaxValue = document.createElement('dd');
+                ddMaxValue.textContent = `${maxValue}`;
+                const dtAvgValue = document.createElement('dt');
+                dtAvgValue.textContent = `Channel ${i} Avg Value`;
+                const ddAvgValue = document.createElement('dd');
+                ddAvgValue.textContent = `${avgValue.toFixed(6)}`;
+
+                inputResult.appendChild(dtMinValue);
+                inputResult.appendChild(ddMinValue);
+                inputResult.appendChild(dtMaxValue);
+                inputResult.appendChild(ddMaxValue);
+                inputResult.appendChild(dtAvgValue);
+                inputResult.appendChild(ddAvgValue);
+            }
+
+            process();
+        });
+
+        /*
+        inputEmbedFile.addEventListener('change', async function () {
+            if (inputEmbedFile.files.length !== 1) {
+                return;
+            }
+
+            const file = inputEmbedFile.files[0];
+            const fileReader = new FileReader();
+            fileReader.readAsArrayBuffer(file);
+            fileReader.addEventListener('loadend', function (e) {
+                if (e.target.readyState !== FileReader.DONE) return;
+
+                let arrayBuffer = e.target.result;
+
+                if (typeof arrayBuffer === 'string') {
+                    alert('Unable to retrieve byte array');
+                    return;
+                }
+
+                let fileSize = arrayBuffer.byteLength;
+                if (fileSize * 8 > Number.MAX_SAFE_INTEGER) {
+                    alert(`Embedded file size isn't safe. Use file less or equal to ${Math.floor(Number.MAX_SAFE_INTEGER / 8)} bytes.`);
+                    return;
+                }
+                embedDataBytes = new Uint8Array(arrayBuffer);
+                alert(`Embed file (${fileSize} bytes) loaded`);
+            });
+            console.debug('Embed file byte reader started')
+        });
+        */
+
+        let lastRecordingBlobUrl = null;
+        const RECORDING_MIME_TYPE = 'audio/webm;codecs=pcm';
+        const RECORDING_FILE_EXTENSION = 'webm';
+        recordingDo.addEventListener('click', async function () {
+            if (!MediaRecorder.isTypeSupported(RECORDING_MIME_TYPE)) {
+                alert(`This browser does not support recording audio in "${RECORDING_MIME_TYPE}". Please use a different browser.`);
+                return;
+            }
+
+            if (lastResult === null) {
+                alert('No processed audio to record.');
+                return;
+            }
+
+            if (lastRecordingBlobUrl !== null) {
+                URL.revokeObjectURL(lastRecordingBlobUrl);
+                lastRecordingBlobUrl = null;
+            }
+
+            recordingResult.innerHTML = 'Recording...';
+
+            const destination = audioContext.createMediaStreamDestination();
+
+            const source = audioContext.createBufferSource();
+            source.buffer = lastResult;
+            source.connect(destination);
+
+            const recorder = new MediaRecorder(destination.stream, {
+                mimeType: RECORDING_MIME_TYPE
+            });
+            const chunks = [];
+
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.addEventListener('stop', () => {
+                const blob = new Blob(chunks, {
+                    type: recorder.mimeType
+                });
+
+                lastRecordingBlobUrl = URL.createObjectURL(blob);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = lastRecordingBlobUrl;
+                downloadLink.download = `processed_audio.${RECORDING_FILE_EXTENSION}`;
+                downloadLink.textContent = 'Download Processed Audio';
+                recordingResult.innerHTML = '';
+                recordingResult.appendChild(downloadLink);
+            });
+
+            recorder.start();
+            source.start();
+            source.addEventListener('ended', function () {
+                recorder.stop();
+            });
+        });
+    </script>
+</body>
+</html>

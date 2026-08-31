@@ -9,6 +9,11 @@
             max-width: calc(100vw - 50px);
             max-height: calc(100vh - 200px);
         }
+        .zoom-to-screen {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -43,6 +48,9 @@
     <section>
         <h2>Manual Compare</h2>
         <div>
+            <input type="checkbox" id="zoom-to-screen"><label for="zoom-to-screen">Zoom to screen</label> (This will break slider)
+        </div>
+        <div>
         </div>
         <div>
             <canvas id="compare-canvas"></canvas><br />
@@ -63,6 +71,8 @@
 
         const img1DimElem = document.getElementById('img1-dim');
         const img2DimElem = document.getElementById('img2-dim');
+
+        const zoomToScreenElem = document.getElementById('zoom-to-screen');
 
         const compareCanvas = document.getElementById('compare-canvas');
         const compareSliderElem = document.getElementById('compare-slider');
@@ -164,6 +174,11 @@
         }
 
         window.addEventListener('resize', onResize);
+
+        zoomToScreenElem.addEventListener('change', function() {
+            compareCanvas.classList.toggle('zoom-to-screen', zoomToScreenElem?.checked ?? false);
+            onChangeSlider();
+        })
     </script>
 </body>
 </html>
