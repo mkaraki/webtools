@@ -10,11 +10,30 @@
     <meta property="og:description" content="A collection of web-based developer tools including HTML/CSS/JS coding utilities, network tools, string processors, data type converters, hardware calculators, media tools, date/time utilities, and more.">
     <meta property="og:type" content="website">
     <title>webtools</title>
+    <style>
+    .hide {display: none;}
+    </style>
 </head>
 
 <body>
-    <h1>webtools</h1>
-    <p>A collection of web-based developer tools including HTML/CSS/JS coding utilities, network tools, string processors, data type converters, hardware calculators, media tools, date/time utilities, and more.</p>
+    <header>
+        <h1>webtools</h1>
+        <p>A collection of web-based developer tools including HTML/CSS/JS coding utilities, network tools, string processors, data type converters, hardware calculators, media tools, date/time utilities, and more.</p>
+        <hr />
+    </header>
+
+    <section class="hide" id="search-tool-section">
+        <h2>Search tools</h2>
+        <form onsubmit="return false" id="search-tool-form">
+            <div>
+                <label for="search-tool">Tool id:</label>
+                <input type="text" list="search-tools" id="search-tool" size="30" />
+                <datalist id="search-tools"></datalist>
+                <input type="submit" value="Go" />
+            </div>
+        </form>
+    </section>
+
     <section>
         <h2>HTML/CSS/JS Coding</h2>
         <ul>
@@ -54,7 +73,7 @@
             <li><a href="pages/string/replace.html">String replace</a></li>
         </ul>
     </section>
-    
+
     <section>
         <h2>Data types</h2>
         <ul>
@@ -116,6 +135,44 @@
         <hr />
         <a href="https://github.com/mkaraki/webtools" target="_blank" rel="noopener noreferrer">Source codes</a>
     </footer>
+
+    <script>
+        const searchToolForm = document.getElementById('search-tool-form');
+        const searchToolInput = document.getElementById('search-tool');
+        const searchToolList = document.getElementById('search-tools');
+        const searchToolSection = document.getElementById('search-tool-section');
+
+        let searchTools = {};
+        const linkList = Array.from(document.querySelectorAll('a'));
+        linkList.forEach(function (e) {
+            const href = e.getAttribute('href');
+            if (!href.startsWith('pages/')) return;
+            let id = href.substring(6);
+            if (id.endsWith('.html'))
+                id = id.substring(0, id.length - 5);
+            searchTools[id] = e;
+
+            const searchToolOption = document.createElement('option');
+            searchToolOption.value = id;
+            searchToolOption.innerText = e.innerText;
+
+            searchToolList.appendChild(searchToolOption);
+
+            // Make focus if process success (Needs only once.)
+            // ToDo: Make this call only once.
+            searchToolInput.focus();
+            searchToolSection.classList.remove('hide')
+        })
+
+        searchToolForm.addEventListener('submit', function () {
+            const id = searchToolInput.value.trim();
+            if (typeof searchTools[id] === 'undefined') {
+              alert('Invalid tool id');
+              return;
+            }
+            searchTools[id].click();
+        });
+    </script>
 </body>
 
 </html>
