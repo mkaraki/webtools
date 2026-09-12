@@ -7,13 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/dist/styles/loading.css">
     <link rel="stylesheet" href="/dist/styles/table.css">
+    <meta name="description" content="Query DNS records (A, AAAA, MX, TXT, etc.) over DNS-over-HTTPS using public resolvers.">
+    <meta property="og:title" content="DNS over HTTPS with JSON API">
+    <meta property="og:description" content="Query DNS records (A, AAAA, MX, TXT, etc.) over DNS-over-HTTPS using public resolvers.">
+    <meta property="og:type" content="article">
     <title>DNS over HTTPS with JSON API</title>
 </head>
 
 <body id="app">
-    <form action="" onsubmit="return false">
+    <header>
         <h1>Query</h1>
+        <p>Query DNS records (A, AAAA, MX, TXT, etc.) over DNS-over-HTTPS using public resolvers.</p>
+        <hr />
+    </header>
 
+    <form action="" onsubmit="return false">
         <div>
             <label for="name">FQDN</label>
             <input type="text" name="name" id="name" size="64">
