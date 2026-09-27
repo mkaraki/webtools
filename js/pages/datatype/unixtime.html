@@ -192,7 +192,7 @@
             const totalTimeOffsetMillisec = (tzOverrideOffsetMinutes + /* System's offset is negative */ tzOffsetMinutes) * 60 * 1000;
 
             const date = new Date(dateStr);
-            const utcAsLocalTimeDate = new Date(date.getTime() + totalTimeOffsetMillisec);
+            const utcAsLocalTimeDate = new Date(date.getTime() - totalTimeOffsetMillisec);
 
             // Only consider per 1 seconds accuracy.
 
