@@ -7,12 +7,15 @@ describe('SRI Hash Calc', () => {
         'Access-Control-Allow-Origin': '*',
       },
       body: 'test',
-    });
+    }).as('sriWebRequest');
   })
 
   it('calculates SRI hash', () => {
     cy.get('#uri').type('https://example.invalid/test.js');
     cy.get('#btn-calc').click();
+
+    cy.wait('@sriWebRequest');
+    cy.wait(500);
 
     cy.get('.sri').each((e, i, l) => {
       expect(e).have.text('sha512-7iaw3Ur350mqGo7jwQrpkj9hiYB3Lkc/iBml1JQODbJ6wYX4oOHV+E+IvIh/1nsUNzLDBMxfqa2Ob1f1ACio/w==');
