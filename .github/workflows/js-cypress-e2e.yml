@@ -1,0 +1,56 @@
+name: Cypress Tests
+
+on:
+  push: {}
+  pull_request: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v3
+        with:
+          node-version-file: false
+          working-directory: js
+          cache: true
+          runtime: node
+
+      # Install npm dependencies, cache them correctly
+      # and run all Cypress tests
+      - name: Cypress run
+        uses: cypress-io/github-action@v7
+        with:
+          package-manager-cache: false
+          working-directory: js
+          start: pnpm run dev
+          wait-on: 'http://127.0.0.1:8080'
+        env:
+          # Recommended: passing the GitHub token lets this action correctly
+          # determine the unique run id necessary to re-run the checks
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v7
+        # add the line below to store screenshots only on failures
+        # if: failure()
+        if: always()
+        with:
+          name: cypress-screenshots
+          path: js/cypress/screenshots
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: cypress-videos
+          path: js/cypress/videos
+          if-no-files-found: ignore
