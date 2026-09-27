@@ -42,12 +42,14 @@ jobs:
       - uses: actions/upload-artifact@v7
         # add the line below to store screenshots only on failures
         # if: failure()
+        if: always()
         with:
           name: cypress-screenshots
           path: js/cypress/screenshots
           if-no-files-found: ignore
 
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: cypress-videos
           path: js/cypress/videos
