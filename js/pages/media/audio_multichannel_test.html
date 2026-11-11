@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Multichannel Audio Tester</title>
-    <meta name="description" content="Test each speaker channel of a multichannel audio setup with tones and panning.">
-    <meta property="og:title" content="Multichannel Audio Tester">
-    <meta property="og:description" content="Test each speaker channel of a multichannel audio setup with tones and panning.">
+    <title>Speaker Channel &amp; Wiring (Phase) Tester</title>
+    <meta name="description" content="Test each speaker channel in mono, stereo, or multichannel setups. Play tones or white noise to check connections, and compare phase to help diagnose reversed speaker wiring.">
+    <meta property="og:title" content="Speaker Channel &amp; Wiring Tester">
+    <meta property="og:description" content="Test each speaker channel in mono, stereo, or multichannel setups. Play tones or white noise to check connections, and compare phase to help diagnose reversed speaker wiring.">
     <meta property="og:type" content="article">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,8 +17,8 @@
 </head>
 <body>
     <header>
-        <h1>Multichannel Audio Tester</h1>
-        <p>Test each speaker channel of a multichannel audio setup with tones and panning.</p>
+        <h1>Speaker Channel &amp; Wiring (Phase) Tester</h1>
+        <p>For mono, stereo, and multichannel setups. Play a tone or white noise on each channel to check for swapped or disconnected speakers. Compare tone phase across speakers to help spot reversed wiring.</p>
         <hr />
     </header>
     <main>
@@ -27,7 +27,7 @@
             <div class="virt-form">
                 <div>
                     <label for="channel-amount">Channels: </label>
-                    <input type="number" id="channel-amount" min="1" value="2">
+                    <input type="number" id="channel-amount" min="1" value="2" required>
                 </div>
                 <div>
                     <button id="init">Initialize</button>
@@ -39,7 +39,7 @@
             <div class="virt-form">
                 <div>
                     <label for="osc-freq">Oscillator Frequency: </label>
-                    <input type="number" id="osc-freq" min="0" value="440">
+                    <input type="number" id="osc-freq" min="0" step="any" value="440" required>
                     <button id="set-osc-freq">Set Frequency</button>
                 </div>
             </div>
@@ -47,7 +47,8 @@
                 <thead>
                     <tr>
                         <th>Channel Id</th>
-                        <th>Actions</th>
+                        <th>Player Control</th>
+                        <th>Oscillator Phase</th>
                     </tr>
                 </thead>
                 <tbody id="control-table"></tbody>
@@ -66,6 +67,7 @@
         let audioContext = null;
         let channelMerger = null;
         let oscillators = [];
+        let oscillatorPlaybackGains = [];
         let whiteNoises = [];
 
         function destroy() {
@@ -73,22 +75,20 @@
 
             controlTableElem.innerHTML = '';
 
-            for (let i = 0; i < oscillators.length; i++) {
-                try {
-                    oscillators[i].stop();
-                    oscillators[i].disconnect(channelMerger);
-                } catch {}
+            for (const oscillator of oscillators) {
+                oscillator.stop();
+                oscillator.disconnect();
             }
             oscillators = [];
-            for (let i = 0; i < whiteNoises.length; i++) {
-                try {
-                    whiteNoises[i].stop();
-                    whiteNoises[i].disconnect(channelMerger);
-                } catch {}
+            for (const gain of oscillatorPlaybackGains) gain.disconnect();
+            oscillatorPlaybackGains = [];
+            for (const whiteNoise of whiteNoises) {
+                whiteNoise.stop();
+                whiteNoise.disconnect();
             }
             whiteNoises = [];
 
-            channelMerger.disconnect(audioContext);
+            channelMerger?.disconnect();
             channelMerger = null;
 
             audioContext.close();
@@ -96,29 +96,46 @@
         }
 
         initElem.addEventListener('click', function () {
+            const channelAmount = channelAmountElem.valueAsNumber;
+            const frequency = oscFreqElem.valueAsNumber;
+            if (!Number.isInteger(channelAmount) || channelAmount < 1) {
+                channelAmountElem.reportValidity();
+                return;
+            }
+            if (!Number.isFinite(frequency) || frequency < 0) {
+                oscFreqElem.reportValidity();
+                return;
+            }
+
             destroy();
 
-            audioContext = new window.AudioContext();
-            const channelAmount = parseInt(channelAmountElem.value);
-
-            audioContext.destination.channelCountMode = "explicit";
-            audioContext.destination.channelInterpretation = 'discrete'; // Prevents auto-panning/mixing
             try {
+                audioContext = new window.AudioContext();
+                audioContext.destination.channelCountMode = 'explicit';
+                audioContext.destination.channelInterpretation = 'discrete'; // Prevents auto-panning/mixing
                 audioContext.destination.channelCount = channelAmount;
-            } catch (/*IndexSizeError*/ e) {
+                channelMerger = audioContext.createChannelMerger(channelAmount);
+                channelMerger.connect(audioContext.destination);
+            } catch (e) {
+                destroy();
                 alert("Channel configuration error: " + e.message);
                 return;
             }
 
-            channelMerger = audioContext.createChannelMerger(channelAmount);
-            channelMerger.connect(audioContext.destination);
-
             for (let i = 0; i < channelAmount; i++) {
                 const oscillator = audioContext.createOscillator();
-                oscillator.start();
-                oscillator.frequency.value = parseInt(oscFreqElem.value);
+                oscillator.frequency.value = frequency;
+                // Keep the oscillator in the graph while muted so it stays in sync.
+                const playbackGain = audioContext.createGain();
+                playbackGain.gain.value = 0;
+                oscillator.connect(playbackGain);
+                playbackGain.connect(channelMerger, 0, i);
                 oscillators.push(oscillator);
+                oscillatorPlaybackGains.push(playbackGain);
             }
+            // Use a shared start time so the channel phases have the same reference.
+            const startTime = audioContext.currentTime + 0.05;
+            for (const oscillator of oscillators) oscillator.start(startTime);
 
             const whiteNoiseBufferSize = audioContext.sampleRate;
             const whiteNoiseBuffer = audioContext.createBuffer(1, whiteNoiseBufferSize, audioContext.sampleRate);
@@ -140,18 +157,17 @@
                 const channelIdCell = document.createElement('td');
                 channelIdCell.textContent = `Channel ${i + 1}`;
                 row.appendChild(channelIdCell);
-                controlTableElem.appendChild(row);
 
                 const actionsCell = document.createElement('td');
                 const oscStartButton = document.createElement('button');
                 oscStartButton.textContent = 'OSC Start';
                 oscStartButton.addEventListener('click', function () {
-                    oscillators[i].connect(channelMerger, 0, i);
+                    oscillatorPlaybackGains[i].gain.value = 1;
                 });
                 const oscStopButton = document.createElement('button');
                 oscStopButton.textContent = 'OSC Stop';
                 oscStopButton.addEventListener('click', function () {
-                    oscillators[i].disconnect(channelMerger);
+                    oscillatorPlaybackGains[i].gain.value = 0;
                 });
 
                 const whiteNoiseStartButton = document.createElement('button');
@@ -162,7 +178,7 @@
                 const whiteNoiseStopButton = document.createElement('button');
                 whiteNoiseStopButton.textContent = 'White Noise Stop';
                 whiteNoiseStopButton.addEventListener('click', function () {
-                    whiteNoises[i].disconnect(channelMerger);
+                    whiteNoises[i].disconnect();
                 });
 
                 actionsCell.appendChild(oscStartButton);
@@ -170,13 +186,55 @@
                 actionsCell.appendChild(whiteNoiseStartButton);
                 actionsCell.appendChild(whiteNoiseStopButton);
                 row.appendChild(actionsCell);
+
+                const phaseCell = document.createElement('td');
+                const phaseInput = document.createElement('input');
+                phaseInput.type = 'range';
+                phaseInput.min = '0';
+                phaseInput.max = '359';
+                phaseInput.step = '1';
+                phaseInput.value = '0';
+                phaseInput.setAttribute('aria-label', `Channel ${i + 1} oscillator phase`);
+                const phaseValue = document.createElement('output');
+                phaseValue.textContent = '0°';
+                phaseInput.addEventListener('input', function () {
+                    const degrees = Number(phaseInput.value);
+                    phaseValue.textContent = `${degrees}°`;
+                    const radians = degrees * Math.PI / 180;
+                    // sin(t + phase) = sin(t) cos(phase) + cos(t) sin(phase).
+                    const wave = audioContext.createPeriodicWave(
+                        new Float32Array([0, Math.sin(radians)]),
+                        new Float32Array([0, Math.cos(radians)]),
+                        { disableNormalization: true }
+                    );
+                    oscillators[i].setPeriodicWave(wave);
+                });
+                phaseCell.appendChild(phaseInput);
+                phaseCell.appendChild(phaseValue);
+                for (const degrees of [0, 90, 180, 270]) {
+                    const button = document.createElement('button');
+                    button.textContent = `${degrees}°`;
+                    button.addEventListener('click', function () {
+                        phaseInput.value = degrees;
+                        phaseInput.dispatchEvent(new Event('input'));
+                    });
+                    phaseCell.appendChild(button);
+                }
+                row.appendChild(phaseCell);
+                controlTableElem.appendChild(row);
             }
         });
 
         setOscFreqElem.addEventListener('click', function () {
-            const freq = parseInt(oscFreqElem.value);
+            const freq = oscFreqElem.valueAsNumber;
+            if (!Number.isFinite(freq) || freq < 0) {
+                oscFreqElem.reportValidity();
+                return;
+            }
+            if (audioContext === null) return;
+            const changeTime = audioContext.currentTime + 0.02;
             for (let i = 0; i < oscillators.length; i++) {
-                oscillators[i].frequency.value = freq;
+                oscillators[i].frequency.setValueAtTime(freq, changeTime);
             }
         });
     </script>
